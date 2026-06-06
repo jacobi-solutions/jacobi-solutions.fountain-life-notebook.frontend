@@ -15,6 +15,7 @@ export function NotebookWorkspace() {
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [statusText, setStatusText] = useState<string>();
   const [deleteDocumentId, setDeleteDocumentId] = useState<string>();
+  const [uploadBatchError, setUploadBatchError] = useState<string>();
 
   const documentsQuery = useQuery({
     enabled: authState.status === "authenticated",
@@ -24,6 +25,8 @@ export function NotebookWorkspace() {
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => documents.uploadDocument(file),
+    onMutate: () => setUploadBatchError(undefined),
+    onError: (error) => setUploadBatchError(errorMessage(error) ?? "Document upload failed."),
     onSuccess: async (document) => {
       setSelectedDocumentIds((current) => Array.from(new Set([...current, document.id])));
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
@@ -84,8 +87,12 @@ export function NotebookWorkspace() {
   }
 
   async function uploadFiles(files: File[]) {
-    for (const file of files) {
-      await uploadMutation.mutateAsync(file);
+    try {
+      for (const file of files) {
+        await uploadMutation.mutateAsync(file);
+      }
+    } catch (error) {
+      setUploadBatchError(errorMessage(error) ?? "Document upload failed.");
     }
   }
 
@@ -131,7 +138,9 @@ export function NotebookWorkspace() {
       onToggleDocument={toggleDocument}
       onToggleEveryDocument={toggleEveryDocument}
       onUploadFiles={handleUploadFiles}
-      operationError={errorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)}
+      operationError={
+        uploadBatchError ?? errorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)
+      }
       question={question}
       selectedDocumentIds={normalizedSelectedDocumentIds}
       statusText={statusText}
