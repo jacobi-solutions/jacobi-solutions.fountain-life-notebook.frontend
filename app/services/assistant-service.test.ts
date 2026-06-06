@@ -21,7 +21,7 @@ describe("AssistantService", () => {
     ];
     vi.mocked(generatedApi.listAssistants).mockResolvedValue({
       data: {
-        data: assistants,
+        assistants,
         errors: [],
         isSuccess: true,
       },
@@ -53,9 +53,9 @@ describe("AssistantService", () => {
     const api = {
       stream: vi.fn(async (_path, _body, onEvent) =>
         onEvent({
-          data: update,
           errors: [],
           isSuccess: true,
+          update,
         }),
       ),
     } as unknown as ApiClient;
@@ -70,7 +70,7 @@ describe("AssistantService", () => {
 
     expect(api.stream).toHaveBeenCalledWith(
       `/assistants/${NOTEBOOK_ASSISTANT_KEY}/stream-message`,
-      { payload: { documentIds: ["document-1"], message: "hello" } },
+      { documentIds: ["document-1"], message: "hello" },
       expect.any(Function),
     );
     expect(onUpdate).toHaveBeenCalledWith(update);
@@ -87,7 +87,7 @@ describe("AssistantService", () => {
     };
     vi.mocked(generatedApi.getConversation).mockResolvedValue({
       data: {
-        data: conversation,
+        conversation,
         errors: [],
         isSuccess: true,
       },
@@ -99,7 +99,7 @@ describe("AssistantService", () => {
 
     await expect(service.getConversation("conversation-1")).resolves.toEqual(conversation);
     expect(generatedApi.getConversation).toHaveBeenCalledWith({
-      payload: { conversationId: "conversation-1" },
+      conversationId: "conversation-1",
     });
   });
 });

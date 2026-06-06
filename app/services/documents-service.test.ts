@@ -27,7 +27,7 @@ describe("DocumentsService", () => {
     };
     vi.mocked(generatedApi.uploadDocument).mockResolvedValue({
       data: {
-        data: document,
+        document,
         errors: [],
         isSuccess: true,
       },
@@ -43,7 +43,6 @@ describe("DocumentsService", () => {
   it("deletes documents by id", async () => {
     vi.mocked(generatedApi.deleteDocument).mockResolvedValue({
       data: {
-        data: { deleted: true },
         errors: [],
         isSuccess: true,
       },
@@ -52,9 +51,9 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.deleteDocument("document-1")).resolves.toEqual({ deleted: true });
+    await expect(service.deleteDocument("document-1")).resolves.toBeUndefined();
     expect(generatedApi.deleteDocument).toHaveBeenCalledWith({
-      payload: { documentId: "document-1" },
+      documentId: "document-1",
     });
   });
 
@@ -73,7 +72,7 @@ describe("DocumentsService", () => {
     ];
     vi.mocked(generatedApi.listDocuments).mockResolvedValue({
       data: {
-        data: documents,
+        documents,
         errors: [],
         isSuccess: true,
       },

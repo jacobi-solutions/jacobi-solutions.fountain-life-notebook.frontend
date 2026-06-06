@@ -1,19 +1,14 @@
-import type { BaseRequest as GeneratedBaseRequest, ErrorInfo } from "../api/generated/fountain-life-api";
+import type { BaseResponse, ErrorInfo } from "../api/generated/fountain-life-api";
 
-export type BaseRequest<TPayload = unknown> = GeneratedBaseRequest & {
-  payload?: TPayload;
-};
-
-export type BaseResponse<TData = unknown> = {
+export type ApiBaseResponse = BaseResponse & {
   correlationId?: string;
-  data?: TData;
   errors: ErrorInfo[];
   isSuccess: boolean;
 };
 
-export function unwrapResponse<TData>(response: BaseResponse<TData>): TData {
+export function assertResponseSuccess(response: ApiBaseResponse) {
   if (response.isSuccess) {
-    return response.data as TData;
+    return;
   }
 
   const message =

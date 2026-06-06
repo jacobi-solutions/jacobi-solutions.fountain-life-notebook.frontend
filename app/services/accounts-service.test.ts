@@ -16,7 +16,7 @@ describe("AccountsService", () => {
     };
     vi.mocked(generatedApi.registerCurrentAccount).mockResolvedValue({
       data: {
-        data: account,
+        account,
         errors: [],
         isSuccess: true,
       },

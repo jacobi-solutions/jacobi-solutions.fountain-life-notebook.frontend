@@ -6,11 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import { generatedApiClient } from '../generated-api-client';
-export type BaseRequestPayload = { [key: string]: unknown };
-
 export interface BaseRequest {
   correlationId?: string;
-  payload?: BaseRequestPayload;
 }
 
 export interface ErrorInfo {
@@ -29,7 +26,7 @@ export interface CurrentUserResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: AuthenticatedUserInfo;
+  user: AuthenticatedUserInfo;
 }
 
 export interface AccountSummary {
@@ -43,14 +40,11 @@ export interface RegisterAccountResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: AccountSummary;
+  account: AccountSummary;
 }
-
-export type ListAssistantsRequestPayload = { [key: string]: unknown };
 
 export interface ListAssistantsRequest {
   correlationId?: string;
-  payload?: ListAssistantsRequestPayload;
 }
 
 export interface AssistantSummary {
@@ -63,16 +57,12 @@ export interface ListAssistantsResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: AssistantSummary[];
-}
-
-export interface GetAssistantConversationPayload {
-  conversationId: string;
+  assistants: AssistantSummary[];
 }
 
 export interface GetAssistantConversationRequest {
   correlationId?: string;
-  payload?: GetAssistantConversationPayload;
+  conversationId: string;
 }
 
 export interface Citation {
@@ -139,19 +129,15 @@ export interface GetAssistantConversationResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: AssistantConversation;
-}
-
-export interface SendAssistantMessagePayload {
-  message: string;
-  conversationId?: string;
-  documentIds?: string[];
-  participantUserIds?: string[];
+  conversation: AssistantConversation;
 }
 
 export interface SendAssistantMessageRequest {
   correlationId?: string;
-  payload?: SendAssistantMessagePayload;
+  message: string;
+  conversationId?: string;
+  documentIds?: string[];
+  participantUserIds?: string[];
 }
 
 export type AssistantThreadUpdateRole = typeof AssistantThreadUpdateRole[keyof typeof AssistantThreadUpdateRole];
@@ -184,7 +170,7 @@ export interface AssistantThreadUpdateResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: AssistantThreadUpdate;
+  update: AssistantThreadUpdate;
 }
 
 export type DocumentSummaryStatus = typeof DocumentSummaryStatus[keyof typeof DocumentSummaryStatus];
@@ -211,41 +197,29 @@ export interface UploadDocumentResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: DocumentSummary;
+  document: DocumentSummary;
 }
-
-export type ListDocumentsRequestPayload = { [key: string]: unknown };
 
 export interface ListDocumentsRequest {
   correlationId?: string;
-  payload?: ListDocumentsRequestPayload;
 }
 
 export interface ListDocumentsResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: DocumentSummary[];
-}
-
-export interface DeleteDocumentPayload {
-  documentId: string;
+  documents: DocumentSummary[];
 }
 
 export interface DeleteDocumentRequest {
   correlationId?: string;
-  payload?: DeleteDocumentPayload;
+  documentId: string;
 }
 
-export interface DeleteDocumentResult {
-  deleted: boolean;
-}
-
-export interface DeleteDocumentResponse {
+export interface BaseResponse {
   correlationId?: string;
   errors: ErrorInfo[];
   isSuccess: boolean;
-  data?: DeleteDocumentResult;
 }
 
 export type UploadDocumentBody = {
@@ -489,7 +463,7 @@ export const listDocuments = async (listDocumentsRequest: ListDocumentsRequest, 
 
 
 export type deleteDocumentResponse200 = {
-  data: DeleteDocumentResponse
+  data: BaseResponse
   status: 200
 }
 
