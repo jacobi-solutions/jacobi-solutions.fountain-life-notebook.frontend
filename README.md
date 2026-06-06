@@ -14,6 +14,31 @@ React Router UI for the Fountain Life interview NotebookLM-style app.
 
 ## Local Setup
 
+### Option A: One Command With Docker
+
+The backend repo includes a local Docker Compose file that starts MongoDB, the backend, and this frontend together.
+It assumes the repos are cloned as siblings:
+
+```text
+Ramin/
+  FountainLifeNotebook.Backend/
+  fountain-life-notebook.frontend/
+```
+
+From `/Users/shanedrye/jacobi/Ramin/FountainLifeNotebook.Backend`:
+
+```bash
+docker compose -f docker-compose.local.yml up
+```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+### Option B: Manual Local Development
+
 ```bash
 npm ci
 cp .env.example .env
