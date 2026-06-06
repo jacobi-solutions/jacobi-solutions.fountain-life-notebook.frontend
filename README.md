@@ -7,9 +7,10 @@ React Router UI for the Fountain Life interview NotebookLM-style app.
 - App shell: React Router SPA served by Vite.
 - Server state: TanStack Query.
 - Service layer: `app/services` owns API, auth, and backend contract usage.
+- UI organization: feature containers compose services and query state, view files hold JSX, and `*.vm.ts` files hold testable view-model logic.
 - Contracts: generated TypeScript API schemas live in `app/api/generated/fountain-life-api.ts`.
 - Auth: local interview mode by default, Cognito OIDC mode available with `VITE_AUTH_MODE=cognito`.
-- API client: centralized `ApiClient` injects auth headers and parses JSON/SSE responses.
+- API client: centralized `ApiClient` injects auth headers and parses JSON/SSE responses; `api-routes.ts` owns backend route constants.
 
 ## Local Setup
 

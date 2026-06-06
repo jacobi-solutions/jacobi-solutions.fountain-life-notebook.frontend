@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "./api-client";
+import { API_ROUTES } from "./api-routes";
 import { AssistantService } from "./assistant-service";
+import { NOTEBOOK_ASSISTANT_KEY } from "../features/notebook/notebook.constants";
 
 describe("AssistantService", () => {
   it("lists assistants through the API client", async () => {
     const assistants = [
       {
         description: "Ask questions grounded in your uploaded documents.",
-        key: "notebook",
+        key: NOTEBOOK_ASSISTANT_KEY,
         name: "Notebook Assistant",
       },
     ];
@@ -21,7 +23,7 @@ describe("AssistantService", () => {
     const service = new AssistantService(api);
 
     await expect(service.listAssistants()).resolves.toEqual(assistants);
-    expect(api.post).toHaveBeenCalledWith("/assistants/list", {});
+    expect(api.post).toHaveBeenCalledWith(API_ROUTES.assistants.list, {});
   });
 
   it("streams assistant updates through the API client", async () => {
@@ -51,10 +53,14 @@ describe("AssistantService", () => {
     const service = new AssistantService(api);
     const onUpdate = vi.fn();
 
-    await service.streamMessage("notebook", { documentIds: ["document-1"], message: "hello" }, onUpdate);
+    await service.streamMessage(
+      NOTEBOOK_ASSISTANT_KEY,
+      { documentIds: ["document-1"], message: "hello" },
+      onUpdate,
+    );
 
     expect(api.stream).toHaveBeenCalledWith(
-      "/assistants/notebook/messages/stream",
+      API_ROUTES.assistants.streamMessages(NOTEBOOK_ASSISTANT_KEY),
       { payload: { documentIds: ["document-1"], message: "hello" } },
       expect.any(Function),
     );
@@ -63,7 +69,7 @@ describe("AssistantService", () => {
 
   it("loads a conversation by id", async () => {
     const conversation = {
-      assistantKey: "support",
+      assistantKey: NOTEBOOK_ASSISTANT_KEY,
       createdDateUtc: "2026-01-01T00:00:00.000Z",
       id: "conversation-1",
       lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
@@ -80,7 +86,7 @@ describe("AssistantService", () => {
     const service = new AssistantService(api);
 
     await expect(service.getConversation("conversation-1")).resolves.toEqual(conversation);
-    expect(api.post).toHaveBeenCalledWith("/assistants/conversation/get", {
+    expect(api.post).toHaveBeenCalledWith(API_ROUTES.assistants.conversationGet, {
       payload: { conversationId: "conversation-1" },
     });
   });

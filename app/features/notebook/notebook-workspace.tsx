@@ -1,8 +1,22 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
 import type { AssistantThreadUpdate } from "../../services/assistant-service";
+import {
+  DOCUMENTS_QUERY_KEY,
+  DOCUMENT_UPLOAD_ERROR_MESSAGE,
+  NOTEBOOK_ASSISTANT_KEY,
+} from "./notebook.constants";
 import { NotebookWorkspaceView } from "./notebook-workspace.view";
+import {
+  addSelectedDocumentId,
+  appendThreadUpdate,
+  createNotebookQuestionRequest,
+  normalizeSelectedDocumentIds,
+  toErrorMessage,
+  toggleDocumentSelection,
+  toggleEveryDocumentSelection,
+} from "./notebook-workspace.vm";
 import "./notebook-workspace.css";
 
 export function NotebookWorkspace() {
@@ -20,16 +34,16 @@ export function NotebookWorkspace() {
   const documentsQuery = useQuery({
     enabled: authState.status === "authenticated",
     queryFn: () => documents.listDocuments(),
-    queryKey: ["documents"],
+    queryKey: DOCUMENTS_QUERY_KEY,
   });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => documents.uploadDocument(file),
     onMutate: () => setUploadBatchError(undefined),
-    onError: (error) => setUploadBatchError(errorMessage(error) ?? "Document upload failed."),
+    onError: (error) => setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE)),
     onSuccess: async (document) => {
-      setSelectedDocumentIds((current) => Array.from(new Set([...current, document.id])));
-      await queryClient.invalidateQueries({ queryKey: ["documents"] });
+      setSelectedDocumentIds((current) => addSelectedDocumentId(current, document.id));
+      await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
     },
   });
 
@@ -39,25 +53,25 @@ export function NotebookWorkspace() {
     onSettled: () => setDeleteDocumentId(undefined),
     onSuccess: async (_result, documentId) => {
       setSelectedDocumentIds((current) => current.filter((selectedId) => selectedId !== documentId));
-      await queryClient.invalidateQueries({ queryKey: ["documents"] });
+      await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
     },
   });
 
   const askMutation = useMutation({
     mutationFn: async () => {
-      const trimmedQuestion = question.trim();
-      if (!trimmedQuestion) {
+      const request = createNotebookQuestionRequest({
+        conversationId,
+        question,
+        selectedDocumentIds: normalizedSelectedDocumentIds,
+      });
+      if (!request) {
         return;
       }
 
       setStatusText(undefined);
       await assistant.streamMessage(
-        "notebook",
-        {
-          conversationId,
-          documentIds: selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined,
-          message: trimmedQuestion,
-        },
+        NOTEBOOK_ASSISTANT_KEY,
+        request,
         (update) => {
           setConversationId(update.conversationId);
           if (update.type === "status") {
@@ -65,18 +79,15 @@ export function NotebookWorkspace() {
             return;
           }
 
-          setMessages((current) => [...current, update]);
+          setMessages((current) => appendThreadUpdate(current, update));
         },
       );
       setQuestion("");
     },
   });
 
-  const documentIds = useMemo(
-    () => new Set((documentsQuery.data ?? []).map((document) => document.id)),
-    [documentsQuery.data],
-  );
-  const normalizedSelectedDocumentIds = selectedDocumentIds.filter((documentId) => documentIds.has(documentId));
+  const currentDocuments = documentsQuery.data ?? [];
+  const normalizedSelectedDocumentIds = normalizeSelectedDocumentIds(selectedDocumentIds, currentDocuments);
 
   function handleUploadFiles(files: FileList | null) {
     if (!files || files.length === 0) {
@@ -92,23 +103,16 @@ export function NotebookWorkspace() {
         await uploadMutation.mutateAsync(file);
       }
     } catch (error) {
-      setUploadBatchError(errorMessage(error) ?? "Document upload failed.");
+      setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE));
     }
   }
 
   function toggleDocument(documentId: string) {
-    setSelectedDocumentIds((current) =>
-      current.includes(documentId)
-        ? current.filter((selectedId) => selectedId !== documentId)
-        : [...current, documentId],
-    );
+    setSelectedDocumentIds((current) => toggleDocumentSelection(current, documentId));
   }
 
   function toggleEveryDocument() {
-    const availableDocumentIds = (documentsQuery.data ?? []).map((document) => document.id);
-    setSelectedDocumentIds((current) =>
-      current.length === availableDocumentIds.length ? [] : availableDocumentIds,
-    );
+    setSelectedDocumentIds((current) => toggleEveryDocumentSelection(current, currentDocuments));
   }
 
   function startNewThread() {
@@ -122,8 +126,8 @@ export function NotebookWorkspace() {
       authState={authState}
       conversationId={conversationId}
       deleteDocumentId={deleteDocumentId}
-      documents={documentsQuery.data ?? []}
-      documentsError={errorMessage(documentsQuery.error)}
+      documents={currentDocuments}
+      documentsError={toErrorMessage(documentsQuery.error)}
       isAsking={askMutation.isPending}
       isDeleting={deleteMutation.isPending}
       isDocumentsLoading={documentsQuery.isLoading}
@@ -139,15 +143,11 @@ export function NotebookWorkspace() {
       onToggleEveryDocument={toggleEveryDocument}
       onUploadFiles={handleUploadFiles}
       operationError={
-        uploadBatchError ?? errorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)
+        uploadBatchError ?? toErrorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)
       }
       question={question}
       selectedDocumentIds={normalizedSelectedDocumentIds}
       statusText={statusText}
     />
   );
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : undefined;
 }

@@ -1,5 +1,6 @@
 import type { ApiClient } from "./api-client";
 import type { components } from "../api/generated/fountain-life-api";
+import { API_ROUTES } from "./api-routes";
 import type { BaseResponse } from "./base-contracts";
 import { unwrapResponse } from "./base-contracts";
 
@@ -16,13 +17,13 @@ export class AssistantService {
 
   async listAssistants() {
     return unwrapResponse(
-      await this.api.post<BaseResponse<AssistantSummary[]>>("/assistants/list", {}),
+      await this.api.post<BaseResponse<AssistantSummary[]>>(API_ROUTES.assistants.list, {}),
     );
   }
 
   async getConversation(conversationId: string) {
     return unwrapResponse(
-      await this.api.post<BaseResponse<AssistantConversation>>("/assistants/conversation/get", {
+      await this.api.post<BaseResponse<AssistantConversation>>(API_ROUTES.assistants.conversationGet, {
         payload: { conversationId },
       }),
     );
@@ -33,7 +34,7 @@ export class AssistantService {
     request: SendAssistantMessageRequest,
     onUpdate: (update: AssistantThreadUpdate) => void,
   ) {
-    return this.api.stream(`/assistants/${assistantKey}/messages/stream`, { payload: request }, (event) =>
+    return this.api.stream(API_ROUTES.assistants.streamMessages(assistantKey), { payload: request }, (event) =>
       onUpdate(unwrapResponse(event as BaseResponse<AssistantThreadUpdate>)),
     );
   }
