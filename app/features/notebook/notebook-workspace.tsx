@@ -79,6 +79,7 @@ export function NotebookWorkspace() {
             return;
           }
 
+          setStatusText(undefined);
           setMessages((current) => appendThreadUpdate(current, update));
         },
       );
