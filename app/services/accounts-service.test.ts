@@ -1,25 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
+import * as generatedApi from "../api/generated/fountain-life-api";
 import { AccountsService } from "./accounts-service";
-import type { ApiClient } from "./api-client";
+
+vi.mock("../api/generated/fountain-life-api", () => ({
+  registerCurrentAccount: vi.fn(),
+}));
 
 describe("AccountsService", () => {
-  it("registers the current user through the API client", async () => {
+  it("registers the current user through the generated API client", async () => {
     const account = {
       cognitoSubject: "subject-123",
       email: "user@example.com",
       id: "account-1",
       username: "user@example.com",
     };
-    const api = {
-      post: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.registerCurrentAccount).mockResolvedValue({
+      data: {
         data: account,
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
-    const service = new AccountsService(api);
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const service = new AccountsService();
 
     await expect(service.registerCurrentUser()).resolves.toEqual(account);
-    expect(api.post).toHaveBeenCalledWith("/accounts/register", {});
+    expect(generatedApi.registerCurrentAccount).toHaveBeenCalledWith({});
   });
 });

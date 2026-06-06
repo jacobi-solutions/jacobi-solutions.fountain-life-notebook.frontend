@@ -1,35 +1,28 @@
-import type { components } from "../api/generated/fountain-life-api";
-import type { ApiClient } from "./api-client";
-import { API_ROUTES } from "./api-routes";
-import type { BaseResponse } from "./base-contracts";
+import {
+  deleteDocument as deleteDocumentApi,
+  type DeleteDocumentResult as GeneratedDeleteDocumentResult,
+  type DocumentSummary as GeneratedDocumentSummary,
+  listDocuments as listDocumentsApi,
+  uploadDocument as uploadDocumentApi,
+} from "../api/generated/fountain-life-api";
 import { unwrapResponse } from "./base-contracts";
 
-export type DocumentSummary = components["schemas"]["DocumentDto"];
-export type DeleteDocumentResult = components["schemas"]["DeleteDocumentResultDto"];
+export type DocumentSummary = GeneratedDocumentSummary;
+export type DeleteDocumentResult = GeneratedDeleteDocumentResult;
 
 export class DocumentsService {
-  constructor(private readonly api: ApiClient) {}
-
   async uploadDocument(file: File) {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    return unwrapResponse(
-      await this.api.upload<BaseResponse<DocumentSummary>>(API_ROUTES.documents.upload, formData),
-    );
+    const response = await uploadDocumentApi({ file });
+    return unwrapResponse(response.data);
   }
 
   async listDocuments() {
-    return unwrapResponse(
-      await this.api.post<BaseResponse<DocumentSummary[]>>(API_ROUTES.documents.list, {}),
-    );
+    const response = await listDocumentsApi({});
+    return unwrapResponse(response.data);
   }
 
   async deleteDocument(documentId: string) {
-    return unwrapResponse(
-      await this.api.post<BaseResponse<DeleteDocumentResult>>(API_ROUTES.documents.delete, {
-        payload: { documentId },
-      }),
-    );
+    const response = await deleteDocumentApi({ payload: { documentId } });
+    return unwrapResponse(response.data);
   }
 }

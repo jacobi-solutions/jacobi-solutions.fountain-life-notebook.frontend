@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { configureGeneratedApiClient } from "../api/generated-api-client";
 import { readAppConfig } from "../core/app-config";
 import { AccountsService } from "./accounts-service";
 import { ApiClient } from "./api-client";
@@ -19,13 +20,17 @@ export function createServices(): FountainLifeServices {
   const config = readAppConfig();
   const auth = new AuthService(config);
   const api = new ApiClient(config.apiBaseUrl, auth);
+  configureGeneratedApiClient({
+    baseUrl: config.apiBaseUrl,
+    getRequestHeaders: () => auth.getRequestHeaders(),
+  });
 
   return {
-    accounts: new AccountsService(api),
+    accounts: new AccountsService(),
     api,
     assistant: new AssistantService(api),
     auth,
-    documents: new DocumentsService(api),
+    documents: new DocumentsService(),
     queryClient: new QueryClient(),
   };
 }

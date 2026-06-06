@@ -6,11 +6,11 @@ React Router UI for the Fountain Life interview NotebookLM-style app.
 
 - App shell: React Router SPA served by Vite.
 - Server state: TanStack Query.
-- Service layer: `app/services` owns API, auth, and backend contract usage.
+- Service layer: `app/services` owns auth, streaming, and app-specific API orchestration.
 - UI organization: feature containers compose services and query state, view files hold JSX, and `*.vm.ts` files hold testable view-model logic.
-- Contracts: generated TypeScript API schemas live in `app/api/generated/fountain-life-api.ts`.
+- Contracts: Orval generates callable TypeScript API functions and schemas in `app/api/generated/fountain-life-api.ts`.
 - Auth: local interview mode by default, Cognito OIDC mode available with `VITE_AUTH_MODE=cognito`.
-- API client: centralized `ApiClient` injects auth headers and parses JSON/SSE responses; `api-routes.ts` owns backend route constants.
+- API client: generated API functions use `app/api/generated-api-client.ts` for base URL and auth header injection. `ApiClient` remains for SSE streaming.
 
 ## Local Setup
 
@@ -68,6 +68,24 @@ After backend DTO changes and backend OpenAPI export:
 
 ```bash
 npm run contract:generate
+```
+
+This runs Orval against the backend OpenAPI document and regenerates callable API functions. Frontend services should import those generated functions instead of hard-coding normal JSON endpoint paths.
+
+The assistant streaming endpoint still uses the hand-written SSE client because it is not a normal JSON request/response operation.
+
+For convenience, either sibling repo can run the full backend export plus frontend generate flow:
+
+```bash
+npm run contract:sync
+```
+
+This assumes the repos are checked out as siblings:
+
+```text
+Ramin/
+  FountainLifeNotebook.Backend/
+  fountain-life-notebook.frontend/
 ```
 
 ## Checks

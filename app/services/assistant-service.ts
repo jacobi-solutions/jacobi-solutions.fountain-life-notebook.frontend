@@ -1,32 +1,35 @@
+import {
+  getConversation,
+  getStreamAssistantMessageUrl,
+  listAssistants,
+  type AssistantConversation as GeneratedAssistantConversation,
+  type AssistantSummary as GeneratedAssistantSummary,
+  type AssistantThreadUpdate as GeneratedAssistantThreadUpdate,
+  type SendAssistantMessagePayload,
+} from "../api/generated/fountain-life-api";
 import type { ApiClient } from "./api-client";
-import type { components } from "../api/generated/fountain-life-api";
-import { API_ROUTES } from "./api-routes";
 import type { BaseResponse } from "./base-contracts";
 import { unwrapResponse } from "./base-contracts";
 
-export type AssistantSummary = components["schemas"]["AssistantSummaryDto"];
+export type AssistantSummary = GeneratedAssistantSummary;
 
-export type AssistantThreadUpdate = components["schemas"]["AssistantThreadUpdateDto"];
+export type AssistantThreadUpdate = GeneratedAssistantThreadUpdate;
 
-export type AssistantConversation = components["schemas"]["AssistantConversationDto"];
+export type AssistantConversation = GeneratedAssistantConversation;
 
-export type SendAssistantMessageRequest = components["schemas"]["SendAssistantMessagePayloadDto"];
+export type SendAssistantMessageRequest = SendAssistantMessagePayload;
 
 export class AssistantService {
   constructor(private readonly api: ApiClient) {}
 
   async listAssistants() {
-    return unwrapResponse(
-      await this.api.post<BaseResponse<AssistantSummary[]>>(API_ROUTES.assistants.list, {}),
-    );
+    const response = await listAssistants({});
+    return unwrapResponse(response.data);
   }
 
   async getConversation(conversationId: string) {
-    return unwrapResponse(
-      await this.api.post<BaseResponse<AssistantConversation>>(API_ROUTES.assistants.conversationGet, {
-        payload: { conversationId },
-      }),
-    );
+    const response = await getConversation({ payload: { conversationId } });
+    return unwrapResponse(response.data);
   }
 
   streamMessage(
@@ -34,7 +37,7 @@ export class AssistantService {
     request: SendAssistantMessageRequest,
     onUpdate: (update: AssistantThreadUpdate) => void,
   ) {
-    return this.api.stream(API_ROUTES.assistants.streamMessages(assistantKey), { payload: request }, (event) =>
+    return this.api.stream(getStreamAssistantMessageUrl(assistantKey), { payload: request }, (event) =>
       onUpdate(unwrapResponse(event as BaseResponse<AssistantThreadUpdate>)),
     );
   }

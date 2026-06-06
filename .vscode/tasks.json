@@ -7,12 +7,10 @@
       "command": "npm run dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
-        "owner": "custom",
-        "pattern": [
-          {
-            "regexp": "."
-          }
-        ],
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".",

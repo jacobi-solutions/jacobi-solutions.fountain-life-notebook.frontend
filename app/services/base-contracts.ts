@@ -1,18 +1,13 @@
-import type { components } from "../api/generated/fountain-life-api";
+import type { BaseRequest as GeneratedBaseRequest, ErrorInfo } from "../api/generated/fountain-life-api";
 
-export interface ErrorDto {
-  errorCode?: string;
-  errorMessage: string;
-}
-
-export type BaseRequest<TPayload = unknown> = components["schemas"]["BaseRequestDto"] & {
+export type BaseRequest<TPayload = unknown> = GeneratedBaseRequest & {
   payload?: TPayload;
 };
 
 export type BaseResponse<TData = unknown> = {
   correlationId?: string;
   data?: TData;
-  errors: ErrorDto[];
+  errors: ErrorInfo[];
   isSuccess: boolean;
 };
 

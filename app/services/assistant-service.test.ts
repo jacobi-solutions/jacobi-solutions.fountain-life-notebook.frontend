@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
+import * as generatedApi from "../api/generated/fountain-life-api";
 import type { ApiClient } from "./api-client";
-import { API_ROUTES } from "./api-routes";
 import { AssistantService } from "./assistant-service";
 import { NOTEBOOK_ASSISTANT_KEY } from "../features/notebook/notebook.constants";
 
+vi.mock("../api/generated/fountain-life-api", () => ({
+  getConversation: vi.fn(),
+  getStreamAssistantMessageUrl: vi.fn((assistantKey: string) => `/assistants/${assistantKey}/stream-message`),
+  listAssistants: vi.fn(),
+}));
+
 describe("AssistantService", () => {
-  it("lists assistants through the API client", async () => {
+  it("lists assistants through the generated API client", async () => {
     const assistants = [
       {
         description: "Ask questions grounded in your uploaded documents.",
@@ -13,17 +19,20 @@ describe("AssistantService", () => {
         name: "Notebook Assistant",
       },
     ];
-    const api = {
-      post: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.listAssistants).mockResolvedValue({
+      data: {
         data: assistants,
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const api = {} as unknown as ApiClient;
     const service = new AssistantService(api);
 
     await expect(service.listAssistants()).resolves.toEqual(assistants);
-    expect(api.post).toHaveBeenCalledWith(API_ROUTES.assistants.list, {});
+    expect(generatedApi.listAssistants).toHaveBeenCalledWith({});
   });
 
   it("streams assistant updates through the API client", async () => {
@@ -60,7 +69,7 @@ describe("AssistantService", () => {
     );
 
     expect(api.stream).toHaveBeenCalledWith(
-      API_ROUTES.assistants.streamMessages(NOTEBOOK_ASSISTANT_KEY),
+      `/assistants/${NOTEBOOK_ASSISTANT_KEY}/stream-message`,
       { payload: { documentIds: ["document-1"], message: "hello" } },
       expect.any(Function),
     );
@@ -76,17 +85,20 @@ describe("AssistantService", () => {
       messages: [],
       participants: [],
     };
-    const api = {
-      post: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.getConversation).mockResolvedValue({
+      data: {
         data: conversation,
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const api = {} as unknown as ApiClient;
     const service = new AssistantService(api);
 
     await expect(service.getConversation("conversation-1")).resolves.toEqual(conversation);
-    expect(api.post).toHaveBeenCalledWith(API_ROUTES.assistants.conversationGet, {
+    expect(generatedApi.getConversation).toHaveBeenCalledWith({
       payload: { conversationId: "conversation-1" },
     });
   });

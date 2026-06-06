@@ -1,7 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ApiClient } from "./api-client";
-import { API_ROUTES } from "./api-routes";
+import * as generatedApi from "../api/generated/fountain-life-api";
+import { DocumentSummaryStatus } from "../api/generated/fountain-life-api";
 import { DocumentsService } from "./documents-service";
+
+vi.mock("../api/generated/fountain-life-api", () => ({
+  deleteDocument: vi.fn(),
+  DocumentSummaryStatus: {
+    failed: "failed",
+    ready: "ready",
+  },
+  listDocuments: vi.fn(),
+  uploadDocument: vi.fn(),
+}));
 
 describe("DocumentsService", () => {
   it("uploads documents with multipart form data", async () => {
@@ -13,33 +23,37 @@ describe("DocumentsService", () => {
       id: "document-1",
       lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
       originalFileName: "notes.txt",
-      status: "ready",
+      status: DocumentSummaryStatus.ready,
     };
-    const api = {
-      upload: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.uploadDocument).mockResolvedValue({
+      data: {
         data: document,
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
-    const service = new DocumentsService(api);
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const service = new DocumentsService();
 
     await expect(service.uploadDocument(new File(["hello"], "notes.txt"))).resolves.toEqual(document);
-    expect(api.upload).toHaveBeenCalledWith(API_ROUTES.documents.upload, expect.any(FormData));
+    expect(generatedApi.uploadDocument).toHaveBeenCalledWith({ file: expect.any(File) });
   });
 
   it("deletes documents by id", async () => {
-    const api = {
-      post: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.deleteDocument).mockResolvedValue({
+      data: {
         data: { deleted: true },
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
-    const service = new DocumentsService(api);
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const service = new DocumentsService();
 
     await expect(service.deleteDocument("document-1")).resolves.toEqual({ deleted: true });
-    expect(api.post).toHaveBeenCalledWith(API_ROUTES.documents.delete, {
+    expect(generatedApi.deleteDocument).toHaveBeenCalledWith({
       payload: { documentId: "document-1" },
     });
   });
@@ -54,19 +68,21 @@ describe("DocumentsService", () => {
         id: "document-1",
         lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
         originalFileName: "notes.txt",
-        status: "ready",
+        status: DocumentSummaryStatus.ready,
       },
     ];
-    const api = {
-      post: vi.fn().mockResolvedValue({
+    vi.mocked(generatedApi.listDocuments).mockResolvedValue({
+      data: {
         data: documents,
         errors: [],
         isSuccess: true,
-      }),
-    } as unknown as ApiClient;
-    const service = new DocumentsService(api);
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const service = new DocumentsService();
 
     await expect(service.listDocuments()).resolves.toEqual(documents);
-    expect(api.post).toHaveBeenCalledWith(API_ROUTES.documents.list, {});
+    expect(generatedApi.listDocuments).toHaveBeenCalledWith({});
   });
 });

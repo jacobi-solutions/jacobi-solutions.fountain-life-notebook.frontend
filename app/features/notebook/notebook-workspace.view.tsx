@@ -16,10 +16,28 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
 
   return (
     <main className="notebook-shell">
+      <div className="notebook-ribbon">AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care</div>
       <header className="notebook-topbar">
-        <div>
-          <p className="notebook-eyebrow">Fountain Life Interview</p>
-          <h1>Notebook</h1>
+        <div className="brand-cluster" aria-label="Fountain Life Notebook">
+          <div className="brand-lockup">
+            <span className="brand-mark" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+            <span className="brand-wordmark">Fountain Life</span>
+          </div>
+          <div>
+            <p className="notebook-eyebrow">Member intelligence notebook</p>
+            <h1>
+              Detect. Prevent. <em>Reverse.</em>
+            </h1>
+          </div>
         </div>
         <div className="notebook-session">
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
@@ -37,12 +55,31 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         </div>
       </header>
 
+      <section className="insight-strip" aria-label="Notebook status overview">
+        <div>
+          <span>{model.documents.length}</span>
+          <p>Uploaded sources</p>
+        </div>
+        <div>
+          <span>{selectedCount || "All"}</span>
+          <p>Selected for review</p>
+        </div>
+        <div>
+          <span>{model.messages.length}</span>
+          <p>Thread insights</p>
+        </div>
+        <div>
+          <span>Zori</span>
+          <p>Medical expert mode</p>
+        </div>
+      </section>
+
       <section className="notebook-layout" aria-label="Notebook workspace">
         <aside className="document-panel" aria-label="Document library">
           <div className="panel-heading">
             <div>
-              <h2>Documents</h2>
-              <p>{model.documents.length} files</p>
+              <p>Source library</p>
+              <h2>Member documents</h2>
             </div>
             <button
               type="button"
@@ -64,7 +101,8 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
                 event.currentTarget.value = "";
               }}
             />
-            <span>{model.isUploading ? "Uploading..." : "Upload"}</span>
+            <span>{model.isUploading ? "Uploading..." : "Upload source files"}</span>
+            <small>PDF, TXT, Markdown</small>
           </label>
 
           {model.documentsError ? <p className="inline-error">{model.documentsError}</p> : null}
@@ -72,7 +110,7 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <div className="document-list" aria-busy={model.isDocumentsLoading}>
             {model.documents.length === 0 ? (
               <p className="empty-state">
-                {model.isDocumentsLoading ? "Loading document library." : "No documents yet."}
+                {model.isDocumentsLoading ? "Loading member documents." : "No member documents yet."}
               </p>
             ) : (
               model.documents.map((document) => {
@@ -112,8 +150,8 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         <section className="chat-panel" aria-label="Notebook chat">
           <div className="panel-heading">
             <div>
-              <h2>Chat</h2>
               <p>{model.conversationId ?? "New thread"}</p>
+              <h2>Healthspan briefing</h2>
             </div>
             <button type="button" className="ghost-button compact-button" onClick={model.onNewThread}>
               New thread
@@ -122,7 +160,10 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
 
           <div className="message-list" aria-live="polite">
             {model.messages.length === 0 ? (
-              <div className="empty-state tall-empty">Ask a question after uploading documents.</div>
+              <div className="empty-state tall-empty">
+                <strong>Optimize what is ahead.</strong>
+                <span>Ask Zori to synthesize the member record when documents are ready.</span>
+              </div>
             ) : (
               model.messages.map((message, index) => (
                 <article
@@ -156,8 +197,8 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
               value={model.question}
               placeholder={
                 selectedCount > 0
-                  ? `Ask across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
-                  : "Ask across all uploaded documents"
+                  ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
+                  : "Ask Zori across all uploaded documents"
               }
               rows={3}
               onChange={(event) => model.onQuestionChange(event.currentTarget.value)}
