@@ -18,6 +18,13 @@ export class ApiClient {
     });
   }
 
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    return this.request<T>(path, {
+      body: formData,
+      method: "POST",
+    });
+  }
+
   async stream(
     path: string,
     body: unknown,

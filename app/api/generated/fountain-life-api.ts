@@ -84,6 +84,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentsController_uploadDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentsController_listDocuments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentsController_deleteDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -173,9 +221,16 @@ export interface components {
             correlationId?: string;
             payload?: components["schemas"]["GetAssistantConversationPayloadDto"];
         };
+        CitationDto: {
+            chunkIndex: number;
+            documentId: string;
+            documentName: string;
+            snippet: string;
+        };
         AssistantConversationMessageDto: {
             actorDisplayName?: string;
             actorUserId?: string;
+            citations?: components["schemas"]["CitationDto"][];
             /** Format: date-time */
             createdDateUtc: string;
             id: string;
@@ -212,6 +267,7 @@ export interface components {
         SendAssistantMessagePayloadDto: {
             message: string;
             conversationId?: string;
+            documentIds?: string[];
             participantUserIds?: string[];
         };
         SendAssistantMessageDto: {
@@ -219,6 +275,7 @@ export interface components {
             payload?: components["schemas"]["SendAssistantMessagePayloadDto"];
         };
         AssistantThreadUpdateDto: {
+            citations?: components["schemas"]["CitationDto"][];
             conversationId: string;
             messageId?: string;
             /** @enum {string} */
@@ -232,6 +289,52 @@ export interface components {
             errors: components["schemas"]["ErrorDto"][];
             isSuccess: boolean;
             data?: components["schemas"]["AssistantThreadUpdateDto"];
+        };
+        DocumentDto: {
+            byteSize: number;
+            chunkCount: number;
+            contentType: string;
+            /** Format: date-time */
+            createdDateUtc: string;
+            id: string;
+            /** Format: date-time */
+            lastUpdatedDateUtc: string;
+            originalFileName: string;
+            /** @enum {string} */
+            status: "failed" | "ready";
+            textPreview?: string;
+        };
+        UploadDocumentResponseDto: {
+            correlationId?: string;
+            errors: components["schemas"]["ErrorDto"][];
+            isSuccess: boolean;
+            data?: components["schemas"]["DocumentDto"];
+        };
+        ListDocumentsRequestDto: {
+            correlationId?: string;
+            payload?: Record<string, never>;
+        };
+        ListDocumentsResponseDto: {
+            correlationId?: string;
+            errors: components["schemas"]["ErrorDto"][];
+            isSuccess: boolean;
+            data?: components["schemas"]["DocumentDto"][];
+        };
+        DeleteDocumentPayloadDto: {
+            documentId: string;
+        };
+        DeleteDocumentRequestDto: {
+            correlationId?: string;
+            payload?: components["schemas"]["DeleteDocumentPayloadDto"];
+        };
+        DeleteDocumentResultDto: {
+            deleted: boolean;
+        };
+        DeleteDocumentResponseDto: {
+            correlationId?: string;
+            errors: components["schemas"]["ErrorDto"][];
+            isSuccess: boolean;
+            data?: components["schemas"]["DeleteDocumentResultDto"];
         };
     };
     responses: never;
@@ -356,6 +459,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssistantThreadUpdateResponseDto"];
+                };
+            };
+        };
+    };
+    DocumentsController_uploadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadDocumentResponseDto"];
+                };
+            };
+        };
+    };
+    DocumentsController_listDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListDocumentsRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDocumentsResponseDto"];
+                };
+            };
+        };
+    };
+    DocumentsController_deleteDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteDocumentRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteDocumentResponseDto"];
                 };
             };
         };

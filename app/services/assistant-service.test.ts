@@ -6,9 +6,9 @@ describe("AssistantService", () => {
   it("lists assistants through the API client", async () => {
     const assistants = [
       {
-        description: "Support assistant",
-        key: "support",
-        name: "Support",
+        description: "Ask questions grounded in your uploaded documents.",
+        key: "notebook",
+        name: "Notebook Assistant",
       },
     ];
     const api = {
@@ -27,6 +27,14 @@ describe("AssistantService", () => {
   it("streams assistant updates through the API client", async () => {
     const update = {
       conversationId: "conversation-1",
+      citations: [
+        {
+          chunkIndex: 0,
+          documentId: "document-1",
+          documentName: "notes.txt",
+          snippet: "A cited detail.",
+        },
+      ],
       role: "assistant",
       text: "Hello",
       type: "message",
@@ -43,11 +51,11 @@ describe("AssistantService", () => {
     const service = new AssistantService(api);
     const onUpdate = vi.fn();
 
-    await service.streamMessage("support", { message: "hello" }, onUpdate);
+    await service.streamMessage("notebook", { documentIds: ["document-1"], message: "hello" }, onUpdate);
 
     expect(api.stream).toHaveBeenCalledWith(
-      "/assistants/support/messages/stream",
-      { payload: { message: "hello" } },
+      "/assistants/notebook/messages/stream",
+      { payload: { documentIds: ["document-1"], message: "hello" } },
       expect.any(Function),
     );
     expect(onUpdate).toHaveBeenCalledWith(update);
