@@ -37,7 +37,13 @@ Then open:
 http://localhost:5173
 ```
 
-### Option B: Manual Local Development
+### Option B: VS Code Debugger
+
+The backend repo includes `FountainLifeNotebook.code-workspace`, which opens both repos and provides a full-stack debugger configuration.
+
+From this frontend repo alone, VS Code also exposes `Frontend: Debug Chrome`. That configuration starts the normal frontend dev server through `npm run dev` and opens Chrome at `http://localhost:5173`. The backend still needs to be running separately.
+
+### Option C: Manual Local Development
 
 ```bash
 npm ci

@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Frontend: Debug Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "preLaunchTask": "Frontend: Dev Server",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/app",
+      "sourceMaps": true
+    }
+  ]
+}
