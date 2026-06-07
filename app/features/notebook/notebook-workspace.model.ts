@@ -22,6 +22,7 @@ export interface NotebookEditorDraft {
 
 export interface NotebookWorkspaceModel {
   activeNotebook?: NotebookSummary;
+  activeUnavailableFeature?: string;
   authState: AuthSnapshot;
   conversationId?: string;
   deleteDocumentId?: string;
@@ -39,6 +40,7 @@ export interface NotebookWorkspaceModel {
   onBackToNotebooks: () => void;
   onCancelEditNotebook: () => void;
   onCreateNotebook: () => void;
+  onDismissUnavailableFeature: () => void;
   onDeleteNotebook: (notebookId: string) => void;
   onDeleteDocument: (documentId: string) => void;
   onDuplicateNotebook: (notebookId: string) => void;
@@ -53,6 +55,7 @@ export interface NotebookWorkspaceModel {
   onSignOut: () => void;
   onToggleDocument: (documentId: string) => void;
   onToggleEveryDocument: () => void;
+  onUnavailableFeature: (featureName: string) => void;
   onUploadFiles: (files: FileList | null) => void;
   operationError?: string;
   notebookDraft: NotebookEditorDraft;

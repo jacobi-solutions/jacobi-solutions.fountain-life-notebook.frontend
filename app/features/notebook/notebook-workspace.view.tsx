@@ -6,6 +6,24 @@ import {
   orderNotebooksByMostRecent,
 } from "./notebook-workspace.vm";
 
+const STUDIO_ACTIONS = [
+  "Audio Overview",
+  "Slide Deck",
+  "Mind Map",
+  "Reports",
+  "Flashcards",
+  "Quiz",
+  "Data Table",
+];
+
+const WORKING_FEATURES = [
+  "Upload PDF, TXT, or Markdown source files.",
+  "Ask Zori questions across uploaded sources.",
+  "Select, clear, and delete source documents.",
+  "Create, rename, duplicate, and delete notebooks.",
+  "Start a fresh chat thread inside a notebook.",
+];
+
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
     <main className="notebook-shell">
@@ -257,11 +275,19 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             <small>PDF, TXT, Markdown</small>
           </label>
 
-          <div className="source-search-shell" aria-hidden="true">
-            <span>Search the web for new sources</span>
+          <div className="source-search-shell" aria-label="Source search features in progress">
+            <span className="source-search-heading">Search the web for new sources</span>
             <div>
-              <small>Web</small>
-              <small>Fast Research</small>
+              {["Web", "Fast Research"].map((featureName) => (
+                <button
+                  type="button"
+                  className="source-search-option"
+                  key={featureName}
+                  onClick={() => model.onUnavailableFeature(featureName)}
+                >
+                  <span>{featureName}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -393,25 +419,53 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             </div>
           </div>
           <div className="studio-grid">
-            {["Audio Overview", "Slide Deck", "Mind Map", "Reports", "Flashcards", "Quiz", "Data Table"].map(
-              (item) => (
-                <button type="button" className="studio-action" key={item}>
-                  <span aria-hidden="true" />
-                  {item}
-                </button>
-              ),
-            )}
+            {STUDIO_ACTIONS.map((item) => (
+              <button
+                type="button"
+                className="studio-action"
+                key={item}
+                onClick={() => model.onUnavailableFeature(item)}
+              >
+                <span className="studio-action-dot" aria-hidden="true" />
+                <span className="studio-action-label">{item}</span>
+              </button>
+            ))}
           </div>
+          {model.activeUnavailableFeature ? <UnavailableFeatureNotice model={model} /> : null}
           <div className="studio-empty">
             <strong>Studio output will be saved here.</strong>
             <span>After adding sources, create overviews, study guides, and care-plan artifacts.</span>
           </div>
-          <button type="button" className="studio-note-button">
+          <button
+            type="button"
+            className="studio-note-button"
+            onClick={() => model.onUnavailableFeature("Add note")}
+          >
             Add note
           </button>
         </aside>
       </section>
     </>
+  );
+}
+
+function UnavailableFeatureNotice({ model }: { model: NotebookWorkspaceModel }) {
+  return (
+    <section className="unavailable-feature-popover" role="status" aria-live="polite">
+      <div>
+        <p>{model.activeUnavailableFeature}</p>
+        <strong>Sorry. This feature is not implemented yet.</strong>
+      </div>
+      <span>Please try one of the working features:</span>
+      <ul>
+        {WORKING_FEATURES.map((feature) => (
+          <li key={feature}>{feature}</li>
+        ))}
+      </ul>
+      <button type="button" className="ghost-button compact-button" onClick={model.onDismissUnavailableFeature}>
+        Close
+      </button>
+    </section>
   );
 }
 

@@ -35,6 +35,7 @@ export function NotebookWorkspace() {
   const authState = useAuth();
   const queryClient = useQueryClient();
   const [activeNotebookId, setActiveNotebookId] = useState<string>();
+  const [activeUnavailableFeature, setActiveUnavailableFeature] = useState<string>();
   const [deleteDocumentId, setDeleteDocumentId] = useState<string>();
   const [editingNotebookId, setEditingNotebookId] = useState<string>();
   const [notebookDraft, setNotebookDraft] = useState<NotebookEditorDraft>(() =>
@@ -319,6 +320,7 @@ export function NotebookWorkspace() {
   return (
     <NotebookWorkspaceView
       activeNotebook={activeNotebook}
+      activeUnavailableFeature={activeUnavailableFeature}
       authState={authState}
       conversationId={activeNotebookSession.conversationId}
       deleteDocumentId={deleteDocumentId}
@@ -339,6 +341,7 @@ export function NotebookWorkspace() {
         setNotebookDraft(createNotebookEditorDraft());
       }}
       onCreateNotebook={createNotebook}
+      onDismissUnavailableFeature={() => setActiveUnavailableFeature(undefined)}
       onDeleteNotebook={deleteNotebook}
       onDeleteDocument={(documentId) => deleteMutation.mutate(documentId)}
       onDuplicateNotebook={duplicateNotebook}
@@ -353,6 +356,7 @@ export function NotebookWorkspace() {
       onSignOut={() => void auth.signOut()}
       onToggleDocument={toggleDocument}
       onToggleEveryDocument={toggleEveryDocument}
+      onUnavailableFeature={setActiveUnavailableFeature}
       onUploadFiles={handleUploadFiles}
       operationError={
         uploadBatchError ?? toErrorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)
