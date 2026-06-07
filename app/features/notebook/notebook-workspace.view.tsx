@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type {
+  NotebookInviteDraft,
   NotebookSummary,
   NotebookWorkspaceModel,
 } from "./notebook-workspace.model";
@@ -24,11 +25,16 @@ const WORKING_FEATURES = [
   "Upload PDF, TXT, or Markdown source files.",
   "Ask Zori questions across uploaded sources.",
   "Select, clear, and delete source documents.",
-  "Create, rename, duplicate, and delete notebooks.",
+  "Create, rename, and delete notebooks.",
   "Start a fresh chat thread inside a notebook.",
 ];
 
 const APP_VERSION = `v${__APP_VERSION__}`;
+const INVITE_ROLES: NotebookInviteDraft["role"][] = [
+  "patient",
+  "clinician",
+  "viewer",
+];
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
@@ -94,6 +100,7 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         <span>&copy; 2026 Fountain Life</span>
       </footer>
       {model.editingNotebook ? <NotebookEditor model={model} /> : null}
+      {model.isInviteMemberVisible ? <NotebookInviteDialog model={model} /> : null}
     </main>
   );
 }
@@ -102,9 +109,6 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
   const visibleNotebooks = filterNotebooks(
     model.notebooks,
     model.notebookSearch,
-  );
-  const featuredNotebooks = visibleNotebooks.filter(
-    (notebook) => notebook.featured,
   );
   const recentNotebooks = orderNotebooksByMostRecent(visibleNotebooks);
 
@@ -130,12 +134,8 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
         </button>
       </section>
 
-      {featuredNotebooks.length > 0 ? (
-        <NotebookCardSection
-          heading="Featured notebooks"
-          model={model}
-          notebooks={featuredNotebooks}
-        />
+      {model.notebooksError ? (
+        <p className="inline-error">{model.notebooksError}</p>
       ) : null}
 
       <section
@@ -157,34 +157,16 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
           {recentNotebooks.map((notebook) => (
             <NotebookCard key={notebook.id} model={model} notebook={notebook} />
           ))}
+          {recentNotebooks.length === 0 ? (
+            <p className="empty-state">
+              {model.isNotebooksLoading
+                ? "Loading notebooks."
+                : "Create a notebook to start adding sources."}
+            </p>
+          ) : null}
         </div>
       </section>
     </>
-  );
-}
-
-function NotebookCardSection({
-  heading,
-  model,
-  notebooks,
-}: {
-  heading: string;
-  model: NotebookWorkspaceModel;
-  notebooks: NotebookSummary[];
-}) {
-  const headingId = `${heading.replace(/\s/g, "-").toLocaleLowerCase()}-heading`;
-
-  return (
-    <section className="notebook-card-section" aria-labelledby={headingId}>
-      <div className="section-heading">
-        <h2 id={headingId}>{heading}</h2>
-      </div>
-      <div className="notebook-card-grid">
-        {notebooks.map((notebook) => (
-          <NotebookCard key={notebook.id} model={model} notebook={notebook} />
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -236,12 +218,6 @@ function NotebookCard({
           </button>
           <button
             type="button"
-            onClick={() => model.onDuplicateNotebook(notebook.id)}
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
             className="danger-button"
             onClick={() => model.onDeleteNotebook(notebook.id)}
           >
@@ -260,6 +236,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   const allDocumentsSelected =
     model.documents.length > 0 && selectedCount === model.documents.length;
   const isViewingDocument = Boolean(model.activeDocumentId);
+  const canInviteMembers = model.activeNotebook?.role === "owner";
   const canAsk =
     model.authState.status === "authenticated" &&
     model.question.trim().length > 0 &&
@@ -291,6 +268,15 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             onClick={() => model.onEditNotebook(model.activeNotebook!.id)}
           >
             Rename
+          </button>
+        ) : null}
+        {canInviteMembers ? (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={model.onStartInviteMember}
+          >
+            Add user
           </button>
         ) : null}
         <button type="button" onClick={model.onCreateNotebook}>
@@ -357,8 +343,8 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           <p>Thread insights</p>
         </div>
         <div>
-          <span>Zori</span>
-          <p>Medical expert mode</p>
+          <span>{model.activeNotebook?.members.length ?? 1}</span>
+          <p>Workspace users</p>
         </div>
       </section>
 
@@ -600,7 +586,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                 placeholder={
                   selectedCount > 0
                     ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
-                    : "Ask Zori across all uploaded documents"
+                    : "Ask Zori across this notebook's uploaded documents"
                 }
                 rows={3}
                 onChange={(event) =>
@@ -823,6 +809,107 @@ function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
       </form>
     </div>
   );
+}
+
+function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
+  function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    model.onSendInvite();
+  }
+
+  return (
+    <div className="notebook-editor-backdrop" role="presentation">
+      <form
+        className="notebook-editor"
+        aria-label="Invite workspace user"
+        onSubmit={submitInvite}
+      >
+        <div className="panel-heading">
+          <div>
+            <p>Workspace access</p>
+            <h2>Add user</h2>
+          </div>
+          <button
+            type="button"
+            className="ghost-button compact-button"
+            onClick={model.onCancelInviteMember}
+          >
+            Close
+          </button>
+        </div>
+        <label>
+          <span>Email</span>
+          <input
+            autoComplete="email"
+            type="email"
+            value={model.notebookInviteDraft.email}
+            onChange={(event) =>
+              model.onInviteDraftChange({
+                ...model.notebookInviteDraft,
+                email: event.currentTarget.value,
+              })
+            }
+          />
+        </label>
+        <label>
+          <span>Role</span>
+          <select
+            value={model.notebookInviteDraft.role}
+            onChange={(event) => {
+              const role = parseInviteRole(event.currentTarget.value);
+              if (!role) {
+                return;
+              }
+
+              model.onInviteDraftChange({
+                ...model.notebookInviteDraft,
+                role,
+              });
+            }}
+          >
+            {INVITE_ROLES.map((role) => (
+              <option key={role} value={role}>
+                {formatRole(role)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="notebook-member-list" aria-label="Workspace members">
+          {(model.activeNotebook?.members ?? []).map((member, index) => (
+            <span key={`${member.email ?? member.userId ?? "member"}-${member.role}-${index}`}>
+              {member.email ?? member.userId} / {member.role} / {member.status}
+            </span>
+          ))}
+        </div>
+        <div className="notebook-editor-actions">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={model.onCancelInviteMember}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={
+              model.isInvitingMember ||
+              model.notebookInviteDraft.email.trim().length === 0
+            }
+          >
+            {model.isInvitingMember ? "Inviting" : "Send invite"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function parseInviteRole(value: string): NotebookInviteDraft["role"] | undefined {
+  return INVITE_ROLES.find((role) => role === value);
+}
+
+function formatRole(role: NotebookInviteDraft["role"]) {
+  return role.charAt(0).toLocaleUpperCase() + role.slice(1);
 }
 
 function formatBytes(bytes: number) {

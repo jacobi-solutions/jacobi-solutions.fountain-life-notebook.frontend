@@ -3,14 +3,17 @@ import type {
   SendAssistantMessageRequest,
 } from "../../services/assistant-service";
 import type { DocumentSummary } from "../../services/documents-service";
+import type { NotebookSummary as PersistedNotebookSummary } from "../../services/notebooks-service";
 import type {
   NotebookEditorDraft,
+  NotebookInviteDraft,
   NotebookSummary,
   NotebookTone,
 } from "./notebook-workspace.model";
 
 export interface NotebookQuestionInput {
   conversationId?: string;
+  notebookId?: string;
   question: string;
   selectedDocumentIds: string[];
 }
@@ -23,36 +26,6 @@ export interface NotebookSessionState {
   statusText?: string;
 }
 
-export const INITIAL_NOTEBOOKS: NotebookSummary[] = [
-  {
-    category: "Diagnostics",
-    createdDateUtc: "2026-06-06T12:00:00.000Z",
-    description: "Longitudinal labs, imaging notes, and prioritized risk signals.",
-    featured: true,
-    id: "healthspan-diagnostics",
-    title: "Healthspan Diagnostics",
-    tone: "aqua",
-  },
-  {
-    category: "Care plan",
-    createdDateUtc: "2026-06-04T12:00:00.000Z",
-    description: "Therapeutic actions, follow-ups, and member-facing next steps.",
-    featured: true,
-    id: "care-plan-builder",
-    title: "Care Plan Builder",
-    tone: "gold",
-  },
-  {
-    category: "Clinical brief",
-    createdDateUtc: "2026-05-28T12:00:00.000Z",
-    description: "Physician-ready summary for consult prep and ongoing review.",
-    featured: true,
-    id: "physician-briefing",
-    title: "Physician Briefing",
-    tone: "graphite",
-  },
-];
-
 const NOTEBOOK_TONES: NotebookTone[] = ["aqua", "gold", "graphite", "violet"];
 
 export function createEmptyNotebookSession(): NotebookSessionState {
@@ -63,21 +36,12 @@ export function createEmptyNotebookSession(): NotebookSessionState {
   };
 }
 
-export function createNotebookSessionMap(notebooks: NotebookSummary[]) {
-  return Object.fromEntries(
-    notebooks.map((notebook) => [notebook.id, createEmptyNotebookSession()]),
-  ) as Record<string, NotebookSessionState>;
-}
-
-export function createNotebookSummary(count: number, createdDateUtc: string): NotebookSummary {
+export function decorateNotebookSummary(
+  notebook: PersistedNotebookSummary,
+): NotebookSummary {
   return {
-    category: "New workspace",
-    createdDateUtc,
-    description: "A focused workspace for sources, questions, citations, and Zori insights.",
-    featured: false,
-    id: `member-notebook-${createdDateUtc.replace(/\W/g, "-")}`,
-    title: "Untitled notebook",
-    tone: NOTEBOOK_TONES[count % NOTEBOOK_TONES.length],
+    ...notebook,
+    tone: NOTEBOOK_TONES[hashString(notebook.id) % NOTEBOOK_TONES.length],
   };
 }
 
@@ -88,6 +52,13 @@ export function createNotebookEditorDraft(notebook?: NotebookSummary): NotebookE
       notebook?.description ??
       "A focused workspace for sources, questions, citations, and Zori insights.",
     title: notebook?.title ?? "",
+  };
+}
+
+export function createNotebookInviteDraft(): NotebookInviteDraft {
+  return {
+    email: "",
+    role: "patient",
   };
 }
 
@@ -104,21 +75,6 @@ export function updateNotebookFromDraft(
       draft.description.trim() ||
       "A focused workspace for sources, questions, citations, and Zori insights.",
     title: title || notebook.title,
-  };
-}
-
-export function duplicateNotebookSummary(
-  notebook: NotebookSummary,
-  count: number,
-  createdDateUtc: string,
-): NotebookSummary {
-  return {
-    ...notebook,
-    createdDateUtc,
-    featured: false,
-    id: `member-notebook-${createdDateUtc.replace(/\W/g, "-")}`,
-    title: `${notebook.title} Copy`,
-    tone: NOTEBOOK_TONES[count % NOTEBOOK_TONES.length],
   };
 }
 
@@ -219,7 +175,11 @@ export function createNotebookQuestionRequest(
   }
 
   const selectedDocumentIds = uniqueDocumentIds(input.selectedDocumentIds);
-  const request: SendAssistantMessageRequest = { message };
+  if (!input.notebookId) {
+    return undefined;
+  }
+
+  const request: SendAssistantMessageRequest = { message, notebookId: input.notebookId };
 
   if (input.conversationId) {
     request.conversationId = input.conversationId;
@@ -246,6 +206,13 @@ export function toErrorMessage(error: unknown, fallback?: string) {
 function uniqueDocumentIds(documentIds: string[]) {
   return Array.from(
     new Set(documentIds.map((documentId) => documentId.trim()).filter(Boolean)),
+  );
+}
+
+function hashString(value: string) {
+  return Array.from(value).reduce(
+    (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
+    0,
   );
 }
 

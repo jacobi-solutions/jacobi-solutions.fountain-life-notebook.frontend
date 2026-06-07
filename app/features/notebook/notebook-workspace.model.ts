@@ -4,6 +4,7 @@ import type {
   DocumentDetail,
   DocumentSummary,
 } from "../../services/documents-service";
+import type { NotebookMemberRole } from "../../services/notebooks-service";
 
 export type NotebookTone = "aqua" | "gold" | "graphite" | "violet";
 
@@ -11,8 +12,16 @@ export interface NotebookSummary {
   category: string;
   createdDateUtc: string;
   description: string;
-  featured: boolean;
   id: string;
+  lastUpdatedDateUtc: string;
+  members: {
+    email?: string;
+    role: NotebookMemberRole;
+    status: "active" | "invited";
+    userId?: string;
+  }[];
+  role: NotebookMemberRole;
+  sourceCount: number;
   title: string;
   tone: NotebookTone;
 }
@@ -21,6 +30,11 @@ export interface NotebookEditorDraft {
   category: string;
   description: string;
   title: string;
+}
+
+export interface NotebookInviteDraft {
+  email: string;
+  role: Exclude<NotebookMemberRole, "owner">;
 }
 
 export interface NotebookWorkspaceModel {
@@ -40,7 +54,10 @@ export interface NotebookWorkspaceModel {
   isDeleting: boolean;
   isDocumentsLoading: boolean;
   isDocumentLoading: boolean;
+  isInviteMemberVisible: boolean;
   isNotebookListVisible: boolean;
+  isNotebooksLoading: boolean;
+  isInvitingMember: boolean;
   isUploading: boolean;
   messages: AssistantThreadUpdate[];
   onAskQuestion: () => void;
@@ -48,16 +65,19 @@ export interface NotebookWorkspaceModel {
   onCancelEditNotebook: () => void;
   onCreateNotebook: () => void;
   onDismissUnavailableFeature: () => void;
+  onCancelInviteMember: () => void;
   onDeleteNotebook: (notebookId: string) => void;
   onDeleteDocument: (documentId: string) => void;
-  onDuplicateNotebook: (notebookId: string) => void;
   onEditNotebook: (notebookId: string) => void;
+  onInviteDraftChange: (draft: NotebookInviteDraft) => void;
   onNewThread: () => void;
   onOpenDocument: (documentId: string) => void;
   onNotebookDraftChange: (draft: NotebookEditorDraft) => void;
   onNotebookSearchChange: (query: string) => void;
   onQuestionChange: (question: string) => void;
   onSaveNotebook: () => void;
+  onSendInvite: () => void;
+  onStartInviteMember: () => void;
   onShowChat: () => void;
   onSelectNotebook: (notebookId: string) => void;
   onSignIn: () => void;
@@ -67,7 +87,9 @@ export interface NotebookWorkspaceModel {
   onUnavailableFeature: (featureName: string) => void;
   onUploadFiles: (files: FileList | null) => void;
   operationError?: string;
+  notebooksError?: string;
   notebookDraft: NotebookEditorDraft;
+  notebookInviteDraft: NotebookInviteDraft;
   notebookSearch: string;
   notebooks: NotebookSummary[];
   question: string;

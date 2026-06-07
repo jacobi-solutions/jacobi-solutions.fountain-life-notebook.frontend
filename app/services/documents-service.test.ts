@@ -7,6 +7,7 @@ vi.mock("../api/generated/fountain-life-api", () => ({
   deleteDocument: vi.fn(),
   DocumentSummaryStatus: {
     failed: "failed",
+    processing: "processing",
     ready: "ready",
   },
   listDocuments: vi.fn(),
@@ -23,6 +24,7 @@ describe("DocumentsService", () => {
       createdDateUtc: "2026-01-01T00:00:00.000Z",
       id: "document-1",
       lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+      notebookId: "notebook-1",
       originalFileName: "notes.txt",
       status: DocumentSummaryStatus.ready,
     };
@@ -38,10 +40,11 @@ describe("DocumentsService", () => {
     const service = new DocumentsService();
 
     await expect(
-      service.uploadDocument(new File(["hello"], "notes.txt")),
+      service.uploadDocument(new File(["hello"], "notes.txt"), "notebook-1"),
     ).resolves.toEqual(document);
     expect(generatedApi.uploadDocument).toHaveBeenCalledWith({
       file: expect.any(File),
+      notebookId: "notebook-1",
     });
   });
 
@@ -56,9 +59,10 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.deleteDocument("document-1")).resolves.toBeUndefined();
+    await expect(service.deleteDocument("document-1", "notebook-1")).resolves.toBeUndefined();
     expect(generatedApi.deleteDocument).toHaveBeenCalledWith({
       documentId: "document-1",
+      notebookId: "notebook-1",
     });
   });
 
@@ -71,6 +75,7 @@ describe("DocumentsService", () => {
         createdDateUtc: "2026-01-01T00:00:00.000Z",
         id: "document-1",
         lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+        notebookId: "notebook-1",
         originalFileName: "notes.txt",
         status: DocumentSummaryStatus.ready,
       },
@@ -86,8 +91,10 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.listDocuments()).resolves.toEqual(documents);
-    expect(generatedApi.listDocuments).toHaveBeenCalledWith({});
+    await expect(service.listDocuments("notebook-1")).resolves.toEqual(documents);
+    expect(generatedApi.listDocuments).toHaveBeenCalledWith({
+      notebookId: "notebook-1",
+    });
   });
 
   it("loads document content by id", async () => {
@@ -99,6 +106,7 @@ describe("DocumentsService", () => {
       createdDateUtc: "2026-01-01T00:00:00.000Z",
       id: "document-1",
       lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+      notebookId: "notebook-1",
       originalFileName: "notes.txt",
       status: DocumentSummaryStatus.ready,
     };
@@ -113,9 +121,10 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.viewDocument("document-1")).resolves.toEqual(document);
+    await expect(service.viewDocument("document-1", "notebook-1")).resolves.toEqual(document);
     expect(generatedApi.viewDocument).toHaveBeenCalledWith({
       documentId: "document-1",
+      notebookId: "notebook-1",
     });
   });
 });

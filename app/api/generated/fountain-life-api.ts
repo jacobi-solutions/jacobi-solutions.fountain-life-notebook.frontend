@@ -135,6 +135,7 @@ export interface GetAssistantConversationResponse {
 export interface SendAssistantMessageRequest {
   correlationId?: string;
   message: string;
+  notebookId: string;
   conversationId?: string;
   documentIds?: string[];
   participantUserIds?: string[];
@@ -178,6 +179,7 @@ export type DocumentSummaryStatus = typeof DocumentSummaryStatus[keyof typeof Do
 
 export const DocumentSummaryStatus = {
   failed: 'failed',
+  processing: 'processing',
   ready: 'ready',
 } as const;
 
@@ -188,9 +190,11 @@ export interface DocumentSummary {
   createdDateUtc: string;
   id: string;
   lastUpdatedDateUtc: string;
+  notebookId: string;
   originalFileName: string;
   status: DocumentSummaryStatus;
   textPreview?: string;
+  knowledgeBaseStatusReason?: string;
 }
 
 export interface UploadDocumentResponse {
@@ -202,6 +206,7 @@ export interface UploadDocumentResponse {
 
 export interface ListDocumentsRequest {
   correlationId?: string;
+  notebookId: string;
 }
 
 export interface ListDocumentsResponse {
@@ -214,6 +219,7 @@ export interface ListDocumentsResponse {
 export interface ViewDocumentRequest {
   correlationId?: string;
   documentId: string;
+  notebookId: string;
 }
 
 export interface DocumentContentSection {
@@ -226,6 +232,7 @@ export type DocumentDetailStatus = typeof DocumentDetailStatus[keyof typeof Docu
 
 export const DocumentDetailStatus = {
   failed: 'failed',
+  processing: 'processing',
   ready: 'ready',
 } as const;
 
@@ -236,9 +243,11 @@ export interface DocumentDetail {
   createdDateUtc: string;
   id: string;
   lastUpdatedDateUtc: string;
+  notebookId: string;
   originalFileName: string;
   status: DocumentDetailStatus;
   textPreview?: string;
+  knowledgeBaseStatusReason?: string;
   chunks: DocumentContentSection[];
 }
 
@@ -252,6 +261,7 @@ export interface ViewDocumentResponse {
 export interface DeleteDocumentRequest {
   correlationId?: string;
   documentId: string;
+  notebookId: string;
 }
 
 export interface BaseResponse {
@@ -260,8 +270,126 @@ export interface BaseResponse {
   isSuccess: boolean;
 }
 
+export interface ListNotebooksRequest {
+  correlationId?: string;
+}
+
+export type NotebookMemberSummaryRole = typeof NotebookMemberSummaryRole[keyof typeof NotebookMemberSummaryRole];
+
+
+export const NotebookMemberSummaryRole = {
+  owner: 'owner',
+  clinician: 'clinician',
+  patient: 'patient',
+  viewer: 'viewer',
+} as const;
+
+export type NotebookMemberSummaryStatus = typeof NotebookMemberSummaryStatus[keyof typeof NotebookMemberSummaryStatus];
+
+
+export const NotebookMemberSummaryStatus = {
+  active: 'active',
+  invited: 'invited',
+} as const;
+
+export interface NotebookMemberSummary {
+  email?: string;
+  role: NotebookMemberSummaryRole;
+  status: NotebookMemberSummaryStatus;
+  userId?: string;
+}
+
+export type NotebookSummaryRole = typeof NotebookSummaryRole[keyof typeof NotebookSummaryRole];
+
+
+export const NotebookSummaryRole = {
+  owner: 'owner',
+  clinician: 'clinician',
+  patient: 'patient',
+  viewer: 'viewer',
+} as const;
+
+export interface NotebookSummary {
+  category: string;
+  createdDateUtc: string;
+  description: string;
+  id: string;
+  members: NotebookMemberSummary[];
+  role: NotebookSummaryRole;
+  lastUpdatedDateUtc: string;
+  sourceCount: number;
+  title: string;
+}
+
+export interface ListNotebooksResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  notebooks: NotebookSummary[];
+}
+
+export interface CreateNotebookRequest {
+  correlationId?: string;
+  category?: string;
+  description?: string;
+  title?: string;
+}
+
+export interface CreateNotebookResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  notebook: NotebookSummary;
+}
+
+export interface UpdateNotebookRequest {
+  correlationId?: string;
+  category?: string;
+  description?: string;
+  notebookId: string;
+  title?: string;
+}
+
+export interface UpdateNotebookResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  notebook: NotebookSummary;
+}
+
+export interface DeleteNotebookRequest {
+  correlationId?: string;
+  notebookId: string;
+}
+
+export type InviteNotebookMemberRequestRole = typeof InviteNotebookMemberRequestRole[keyof typeof InviteNotebookMemberRequestRole];
+
+
+export const InviteNotebookMemberRequestRole = {
+  owner: 'owner',
+  clinician: 'clinician',
+  patient: 'patient',
+  viewer: 'viewer',
+} as const;
+
+export interface InviteNotebookMemberRequest {
+  correlationId?: string;
+  email: string;
+  notebookId: string;
+  role: InviteNotebookMemberRequestRole;
+}
+
+export interface InviteNotebookMemberResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  inviteDelivery: string;
+  notebook: NotebookSummary;
+}
+
 export type UploadDocumentBody = {
   file: Blob;
+  notebookId: string;
 };
 
 export type HandleMcpRequestBody = { [key: string]: unknown };
@@ -455,6 +583,7 @@ export const getUploadDocumentUrl = () => {
 export const uploadDocument = async (uploadDocumentBody: UploadDocumentBody, options?: RequestInit): Promise<uploadDocumentResponse> => {
     const formData = new FormData();
 formData.append(`file`, uploadDocumentBody.file);
+formData.append(`notebookId`, uploadDocumentBody.notebookId);
 
   return generatedApiClient<uploadDocumentResponse>(getUploadDocumentUrl(),
   {
@@ -627,5 +756,170 @@ export const handleMcpRequest = async (handleMcpRequestBody: HandleMcpRequestBod
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(handleMcpRequestBody)
+  }
+);}
+
+
+
+export type listNotebooksResponse200 = {
+  data: ListNotebooksResponse
+  status: 200
+}
+
+export type listNotebooksResponseSuccess = (listNotebooksResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listNotebooksResponse = (listNotebooksResponseSuccess)
+
+export const getListNotebooksUrl = () => {
+
+
+
+
+  return `/notebooks/list-notebooks`
+}
+
+export const listNotebooks = async (listNotebooksRequest: ListNotebooksRequest, options?: RequestInit): Promise<listNotebooksResponse> => {
+
+  return generatedApiClient<listNotebooksResponse>(getListNotebooksUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(listNotebooksRequest)
+  }
+);}
+
+
+
+export type createNotebookResponse200 = {
+  data: CreateNotebookResponse
+  status: 200
+}
+
+export type createNotebookResponseSuccess = (createNotebookResponse200) & {
+  headers: Headers;
+};
+;
+
+export type createNotebookResponse = (createNotebookResponseSuccess)
+
+export const getCreateNotebookUrl = () => {
+
+
+
+
+  return `/notebooks/create-notebook`
+}
+
+export const createNotebook = async (createNotebookRequest: CreateNotebookRequest, options?: RequestInit): Promise<createNotebookResponse> => {
+
+  return generatedApiClient<createNotebookResponse>(getCreateNotebookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createNotebookRequest)
+  }
+);}
+
+
+
+export type updateNotebookResponse200 = {
+  data: UpdateNotebookResponse
+  status: 200
+}
+
+export type updateNotebookResponseSuccess = (updateNotebookResponse200) & {
+  headers: Headers;
+};
+;
+
+export type updateNotebookResponse = (updateNotebookResponseSuccess)
+
+export const getUpdateNotebookUrl = () => {
+
+
+
+
+  return `/notebooks/update-notebook`
+}
+
+export const updateNotebook = async (updateNotebookRequest: UpdateNotebookRequest, options?: RequestInit): Promise<updateNotebookResponse> => {
+
+  return generatedApiClient<updateNotebookResponse>(getUpdateNotebookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateNotebookRequest)
+  }
+);}
+
+
+
+export type deleteNotebookResponse200 = {
+  data: BaseResponse
+  status: 200
+}
+
+export type deleteNotebookResponseSuccess = (deleteNotebookResponse200) & {
+  headers: Headers;
+};
+;
+
+export type deleteNotebookResponse = (deleteNotebookResponseSuccess)
+
+export const getDeleteNotebookUrl = () => {
+
+
+
+
+  return `/notebooks/delete-notebook`
+}
+
+export const deleteNotebook = async (deleteNotebookRequest: DeleteNotebookRequest, options?: RequestInit): Promise<deleteNotebookResponse> => {
+
+  return generatedApiClient<deleteNotebookResponse>(getDeleteNotebookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(deleteNotebookRequest)
+  }
+);}
+
+
+
+export type inviteNotebookMemberResponse200 = {
+  data: InviteNotebookMemberResponse
+  status: 200
+}
+
+export type inviteNotebookMemberResponseSuccess = (inviteNotebookMemberResponse200) & {
+  headers: Headers;
+};
+;
+
+export type inviteNotebookMemberResponse = (inviteNotebookMemberResponseSuccess)
+
+export const getInviteNotebookMemberUrl = () => {
+
+
+
+
+  return `/notebooks/invite-notebook-member`
+}
+
+export const inviteNotebookMember = async (inviteNotebookMemberRequest: InviteNotebookMemberRequest, options?: RequestInit): Promise<inviteNotebookMemberResponse> => {
+
+  return generatedApiClient<inviteNotebookMemberResponse>(getInviteNotebookMemberUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(inviteNotebookMemberRequest)
   }
 );}

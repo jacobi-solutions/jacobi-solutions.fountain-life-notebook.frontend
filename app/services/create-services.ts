@@ -6,6 +6,7 @@ import { ApiClient } from "./api-client";
 import { AssistantService } from "./assistant-service";
 import { AuthService } from "./auth-service";
 import { DocumentsService } from "./documents-service";
+import { NotebooksService } from "./notebooks-service";
 
 export interface FountainLifeServices {
   accounts: AccountsService;
@@ -13,6 +14,7 @@ export interface FountainLifeServices {
   assistant: AssistantService;
   auth: AuthService;
   documents: DocumentsService;
+  notebooks: NotebooksService;
   queryClient: QueryClient;
 }
 
@@ -31,6 +33,7 @@ export function createServices(): FountainLifeServices {
     assistant: new AssistantService(api),
     auth,
     documents: new DocumentsService(),
+    notebooks: new NotebooksService(),
     queryClient: new QueryClient(),
   };
 }

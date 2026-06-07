@@ -1168,8 +1168,21 @@
   text-transform: uppercase;
 }
 
-.notebook-editor input {
+.notebook-editor input,
+.notebook-editor select {
   border-radius: 8px;
+}
+
+.notebook-member-list {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 9rem;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.65rem;
+  color: rgba(247, 247, 242, 0.72);
+  font-size: 0.86rem;
 }
 
 .notebook-editor-actions {

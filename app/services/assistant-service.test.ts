@@ -64,13 +64,13 @@ describe("AssistantService", () => {
 
     await service.streamMessage(
       NOTEBOOK_ASSISTANT_KEY,
-      { documentIds: ["document-1"], message: "hello" },
+      { documentIds: ["document-1"], message: "hello", notebookId: "notebook-1" },
       onUpdate,
     );
 
     expect(api.stream).toHaveBeenCalledWith(
       `/assistants/${NOTEBOOK_ASSISTANT_KEY}/stream-message`,
-      { documentIds: ["document-1"], message: "hello" },
+      { documentIds: ["document-1"], message: "hello", notebookId: "notebook-1" },
       expect.any(Function),
     );
     expect(onUpdate).toHaveBeenCalledWith(update);

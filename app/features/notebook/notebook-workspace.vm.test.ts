@@ -7,14 +7,11 @@ import {
   createEmptyNotebookSession,
   createNotebookEditorDraft,
   createNotebookQuestionRequest,
-  createNotebookSessionMap,
-  createNotebookSummary,
-  duplicateNotebookSummary,
+  decorateNotebookSummary,
   filterNotebooks,
   formatNotebookDate,
   getNotebookSourceCount,
   inferNotebookTitleFromPrompt,
-  INITIAL_NOTEBOOKS,
   normalizeSelectedDocumentIds,
   orderNotebooksByMostRecent,
   shouldAutoNameNotebook,
@@ -53,6 +50,7 @@ describe("notebook workspace view model", () => {
     expect(
       createNotebookQuestionRequest({
         conversationId: "conversation-1",
+        notebookId: "notebook-1",
         question: "  What happens first?  ",
         selectedDocumentIds: ["document-1", "document-1"],
       }),
@@ -60,10 +58,18 @@ describe("notebook workspace view model", () => {
       conversationId: "conversation-1",
       documentIds: ["document-1"],
       message: "What happens first?",
+      notebookId: "notebook-1",
     });
     expect(
       createNotebookQuestionRequest({
+        notebookId: "notebook-1",
         question: "   ",
+        selectedDocumentIds: [],
+      }),
+    ).toBeUndefined();
+    expect(
+      createNotebookQuestionRequest({
+        question: "What changed?",
         selectedDocumentIds: [],
       }),
     ).toBeUndefined();
@@ -92,11 +98,14 @@ describe("notebook workspace view model", () => {
     expect(toErrorMessage("failed", "Fallback")).toBe("Fallback");
   });
 
-  it("creates new notebooks as untitled empty workspaces", () => {
-    const notebook = createNotebookSummary(3, "2026-06-06T12:00:00.000Z");
+  it("decorates persisted notebook summaries for presentation", () => {
+    const notebook = decorateNotebookSummary(persistedNotebooks[0]);
 
-    expect(notebook.title).toBe("Untitled notebook");
-    expect(notebook.category).toBe("New workspace");
+    expect(notebook).toMatchObject({
+      id: "healthspan-diagnostics",
+      sourceCount: 2,
+      tone: "gold",
+    });
     expect(createEmptyNotebookSession()).toEqual({
       messages: [],
       question: "",
@@ -104,22 +113,16 @@ describe("notebook workspace view model", () => {
     });
   });
 
-  it("builds a session map for every notebook", () => {
-    expect(Object.keys(createNotebookSessionMap(INITIAL_NOTEBOOKS))).toEqual(
-      INITIAL_NOTEBOOKS.map((notebook) => notebook.id),
-    );
-  });
-
   it("updates notebook metadata from a trimmed draft", () => {
     const draft = createNotebookEditorDraft({
-      ...INITIAL_NOTEBOOKS[0],
+      ...notebooks[0],
       category: "Diagnostics",
       description: "Old description",
       title: "Old title",
     });
 
     expect(
-      updateNotebookFromDraft(INITIAL_NOTEBOOKS[0], {
+      updateNotebookFromDraft(notebooks[0], {
         ...draft,
         category: "  Labs  ",
         description: "  Updated description  ",
@@ -132,21 +135,9 @@ describe("notebook workspace view model", () => {
     });
   });
 
-  it("duplicates notebook metadata without carrying the original id or featured flag", () => {
-    const duplicatedNotebook = duplicateNotebookSummary(
-      INITIAL_NOTEBOOKS[0],
-      INITIAL_NOTEBOOKS.length,
-      "2026-06-07T12:00:00.000Z",
-    );
-
-    expect(duplicatedNotebook.id).not.toBe(INITIAL_NOTEBOOKS[0].id);
-    expect(duplicatedNotebook.featured).toBe(false);
-    expect(duplicatedNotebook.title).toBe(`${INITIAL_NOTEBOOKS[0].title} Copy`);
-  });
-
   it("filters and orders notebooks for the gallery", () => {
-    expect(filterNotebooks(INITIAL_NOTEBOOKS, "care")).toEqual([INITIAL_NOTEBOOKS[1]]);
-    expect(orderNotebooksByMostRecent(INITIAL_NOTEBOOKS).map((notebook) => notebook.id)).toEqual([
+    expect(filterNotebooks(notebooks, "care")).toEqual([notebooks[1]]);
+    expect(orderNotebooksByMostRecent(notebooks).map((notebook) => notebook.id)).toEqual([
       "healthspan-diagnostics",
       "care-plan-builder",
       "physician-briefing",
@@ -168,12 +159,73 @@ describe("notebook workspace view model", () => {
   });
 
   it("auto-names untitled notebooks from the first topic prompt", () => {
-    expect(shouldAutoNameNotebook(createNotebookSummary(3, "2026-06-06T12:00:00.000Z"))).toBe(true);
+    expect(
+      shouldAutoNameNotebook(
+        decorateNotebookSummary(
+          {
+            category: "Member notebook",
+            createdDateUtc: "2026-06-06T12:00:00.000Z",
+            description: "",
+            id: "notebook-4",
+            lastUpdatedDateUtc: "2026-06-06T12:00:00.000Z",
+            members: [notebookMember],
+            role: "owner",
+            sourceCount: 0,
+            title: "Untitled notebook",
+          },
+        ),
+      ),
+    ).toBe(true);
     expect(inferNotebookTitleFromPrompt("Summarize cardiovascular risk from the latest labs")).toBe(
       "Cardiovascular Risk Latest Labs",
     );
   });
 });
+
+const notebookMember = {
+  email: "owner@example.com",
+  role: "owner" as const,
+  status: "active" as const,
+  userId: "owner-1",
+};
+
+const persistedNotebooks = [
+  {
+    category: "Diagnostics",
+    createdDateUtc: "2026-06-06T12:00:00.000Z",
+    description: "A source set for diagnostics.",
+    id: "healthspan-diagnostics",
+    lastUpdatedDateUtc: "2026-06-06T12:00:00.000Z",
+    members: [notebookMember],
+    role: "owner" as const,
+    sourceCount: 2,
+    title: "Healthspan Diagnostics",
+  },
+  {
+    category: "Care Planning",
+    createdDateUtc: "2026-06-05T12:00:00.000Z",
+    description: "Care plan source materials.",
+    id: "care-plan-builder",
+    lastUpdatedDateUtc: "2026-06-05T12:00:00.000Z",
+    members: [notebookMember],
+    role: "owner" as const,
+    sourceCount: 1,
+    title: "Care Plan Builder",
+  },
+  {
+    category: "Briefing",
+    createdDateUtc: "2026-06-04T12:00:00.000Z",
+    description: "Physician briefing notes.",
+    id: "physician-briefing",
+    lastUpdatedDateUtc: "2026-06-04T12:00:00.000Z",
+    members: [notebookMember],
+    role: "owner" as const,
+    sourceCount: 3,
+    title: "Physician Briefing",
+  },
+];
+
+const notebooks = persistedNotebooks.map((notebook) => decorateNotebookSummary(notebook));
 
 const documents: DocumentSummary[] = [
   {
@@ -183,6 +235,7 @@ const documents: DocumentSummary[] = [
     createdDateUtc: "2026-01-01T00:00:00.000Z",
     id: "document-1",
     lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+    notebookId: "notebook-1",
     originalFileName: "one.txt",
     status: "ready",
   },
@@ -193,6 +246,7 @@ const documents: DocumentSummary[] = [
     createdDateUtc: "2026-01-01T00:00:00.000Z",
     id: "document-2",
     lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+    notebookId: "notebook-1",
     originalFileName: "two.txt",
     status: "ready",
   },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
 import {
@@ -6,6 +6,7 @@ import {
   DOCUMENTS_QUERY_KEY,
   DOCUMENT_UPLOAD_ERROR_MESSAGE,
   NOTEBOOK_ASSISTANT_KEY,
+  NOTEBOOKS_QUERY_KEY,
 } from "./notebook.constants";
 import type { NotebookEditorDraft } from "./notebook-workspace.model";
 import { NotebookWorkspaceView } from "./notebook-workspace.view";
@@ -14,25 +15,21 @@ import {
   appendThreadUpdate,
   createEmptyNotebookSession,
   createNotebookEditorDraft,
-  createNotebookSessionMap,
+  createNotebookInviteDraft,
   createNotebookQuestionRequest,
-  createNotebookSummary,
-  duplicateNotebookSummary,
-  getNotebookSourceCount,
+  decorateNotebookSummary,
   inferNotebookTitleFromPrompt,
-  INITIAL_NOTEBOOKS,
   normalizeSelectedDocumentIds,
   shouldAutoNameNotebook,
   toErrorMessage,
   toggleDocumentSelection,
   toggleEveryDocumentSelection,
-  updateNotebookFromDraft,
   type NotebookSessionState,
 } from "./notebook-workspace.vm";
 import "./notebook-workspace.css";
 
 export function NotebookWorkspace() {
-  const { assistant, auth, documents } = useServices();
+  const { assistant, auth, documents, notebooks: notebooksService } = useServices();
   const authState = useAuth();
   const queryClient = useQueryClient();
   const [activeNotebookId, setActiveNotebookId] = useState<string>();
@@ -44,27 +41,112 @@ export function NotebookWorkspace() {
   const [notebookDraft, setNotebookDraft] = useState<NotebookEditorDraft>(() =>
     createNotebookEditorDraft(),
   );
-  const [notebookSearch, setNotebookSearch] = useState("");
-  const [notebooks, setNotebooks] = useState(INITIAL_NOTEBOOKS);
-  const [notebookSessions, setNotebookSessions] = useState(() =>
-    createNotebookSessionMap(INITIAL_NOTEBOOKS),
+  const [isInviteMemberVisible, setIsInviteMemberVisible] = useState(false);
+  const [notebookInviteDraft, setNotebookInviteDraft] = useState(() =>
+    createNotebookInviteDraft(),
   );
+  const [notebookSearch, setNotebookSearch] = useState("");
+  const [notebookSessions, setNotebookSessions] = useState<
+    Record<string, NotebookSessionState>
+  >({});
   const [uploadBatchError, setUploadBatchError] = useState<string>();
 
-  const documentsQuery = useQuery({
+  const notebooksQuery = useQuery({
     enabled: authState.status === "authenticated",
-    queryFn: () => documents.listDocuments(),
-    queryKey: DOCUMENTS_QUERY_KEY,
+    queryFn: () => notebooksService.listNotebooks(),
+    queryKey: NOTEBOOKS_QUERY_KEY,
+  });
+  const notebooks = useMemo(
+    () => (notebooksQuery.data ?? []).map(decorateNotebookSummary),
+    [notebooksQuery.data],
+  );
+  const activeNotebook = notebooks.find(
+    (notebook) => notebook.id === activeNotebookId,
+  );
+
+  const documentsQuery = useQuery({
+    enabled: authState.status === "authenticated" && Boolean(activeNotebookId),
+    queryFn: () => documents.listDocuments(activeNotebookId!),
+    queryKey: [...DOCUMENTS_QUERY_KEY, activeNotebookId],
   });
 
   const documentDetailQuery = useQuery({
-    enabled: authState.status === "authenticated" && Boolean(activeDocumentId),
-    queryFn: () => documents.viewDocument(activeDocumentId!),
-    queryKey: [DOCUMENT_DETAIL_QUERY_KEY, activeDocumentId],
+    enabled:
+      authState.status === "authenticated" &&
+      Boolean(activeNotebookId) &&
+      Boolean(activeDocumentId),
+    queryFn: () => documents.viewDocument(activeDocumentId!, activeNotebookId!),
+    queryKey: [DOCUMENT_DETAIL_QUERY_KEY, activeNotebookId, activeDocumentId],
+  });
+
+  const createNotebookMutation = useMutation({
+    mutationFn: () => notebooksService.createNotebook(),
+    onSuccess: async (notebook) => {
+      setActiveNotebookId(notebook.id);
+      setNotebookSearch("");
+      await queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY });
+    },
+  });
+
+  const updateNotebookMutation = useMutation({
+    mutationFn: (input: {
+      category?: string;
+      description?: string;
+      notebookId: string;
+      title?: string;
+    }) => notebooksService.updateNotebook(input),
+    onSuccess: async () => {
+      setEditingNotebookId(undefined);
+      setNotebookDraft(createNotebookEditorDraft());
+      await queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY });
+    },
+  });
+
+  const deleteNotebookMutation = useMutation({
+    mutationFn: (notebookId: string) => notebooksService.deleteNotebook(notebookId),
+    onSuccess: async (_result, notebookId) => {
+      setNotebookSessions((current) => {
+        const next = { ...current };
+        delete next[notebookId];
+        return next;
+      });
+      if (activeNotebookId === notebookId) {
+        setActiveNotebookId(undefined);
+        setActiveDocumentId(undefined);
+      }
+      if (editingNotebookId === notebookId) {
+        setEditingNotebookId(undefined);
+        setNotebookDraft(createNotebookEditorDraft());
+      }
+      await queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY });
+    },
+  });
+
+  const inviteNotebookMemberMutation = useMutation({
+    mutationFn: ({
+      email,
+      notebookId,
+      role,
+    }: {
+      email: string;
+      notebookId: string;
+      role: typeof notebookInviteDraft.role;
+    }) =>
+      notebooksService.inviteNotebookMember({
+        email,
+        notebookId,
+        role,
+      }),
+    onSuccess: async () => {
+      setIsInviteMemberVisible(false);
+      setNotebookInviteDraft(createNotebookInviteDraft());
+      await queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY });
+    },
   });
 
   const uploadMutation = useMutation({
-    mutationFn: (file: File) => documents.uploadDocument(file),
+    mutationFn: ({ file, notebookId }: { file: File; notebookId: string }) =>
+      documents.uploadDocument(file, notebookId),
     onMutate: () => setUploadBatchError(undefined),
     onError: (error) =>
       setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE)),
@@ -78,15 +160,21 @@ export function NotebookWorkspace() {
         }));
       }
       setActiveDocumentId(document.id);
-      await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
+      await invalidateActiveNotebookData();
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (documentId: string) => documents.deleteDocument(documentId),
-    onMutate: (documentId) => setDeleteDocumentId(documentId),
+    mutationFn: ({
+      documentId,
+      notebookId,
+    }: {
+      documentId: string;
+      notebookId: string;
+    }) => documents.deleteDocument(documentId, notebookId),
+    onMutate: ({ documentId }) => setDeleteDocumentId(documentId),
     onSettled: () => setDeleteDocumentId(undefined),
-    onSuccess: async (_result, documentId) => {
+    onSuccess: async (_result, { documentId }) => {
       setNotebookSessions((current) =>
         Object.fromEntries(
           Object.entries(current).map(([notebookId, session]) => [
@@ -103,7 +191,7 @@ export function NotebookWorkspace() {
       if (activeDocumentId === documentId) {
         setActiveDocumentId(undefined);
       }
-      await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
+      await invalidateActiveNotebookData();
     },
   });
 
@@ -116,6 +204,7 @@ export function NotebookWorkspace() {
 
       const request = createNotebookQuestionRequest({
         conversationId: activeNotebookSession.conversationId,
+        notebookId,
         question: activeNotebookSession.question,
         selectedDocumentIds: normalizedSelectedDocumentIds,
       });
@@ -127,27 +216,29 @@ export function NotebookWorkspace() {
         (notebook) => notebook.id === notebookId,
       );
       if (shouldAutoNameNotebook(activeNotebookForRequest)) {
-        renameNotebook(
-          notebookId,
-          inferNotebookTitleFromPrompt(request.message),
-        );
+        try {
+          await updateNotebookMutation.mutateAsync({
+            category:
+              activeNotebookForRequest?.category === "New workspace"
+                ? "Member notebook"
+                : activeNotebookForRequest?.category,
+            description: activeNotebookForRequest?.description,
+            notebookId,
+            title: inferNotebookTitleFromPrompt(request.message),
+          });
+        } catch {
+          // Best-effort title cleanup should not prevent the question from sending.
+        }
       }
 
       updateNotebookSession(notebookId, () => ({ statusText: undefined }));
-      await assistant.streamMessage(
-        NOTEBOOK_ASSISTANT_KEY,
-        request,
-        (update) => {
-          updateNotebookSession(notebookId, (current) => ({
-            conversationId: update.conversationId,
-            messages: appendThreadUpdate(current.messages, update),
-            statusText: update.type === "status" ? update.text : undefined,
-          }));
-          if (update.type === "status") {
-            return;
-          }
-        },
-      );
+      await assistant.streamMessage(NOTEBOOK_ASSISTANT_KEY, request, (update) => {
+        updateNotebookSession(notebookId, (current) => ({
+          conversationId: update.conversationId,
+          messages: appendThreadUpdate(current.messages, update),
+          statusText: update.type === "status" ? update.text : undefined,
+        }));
+      });
       updateNotebookSession(notebookId, () => ({ question: "" }));
     },
   });
@@ -157,9 +248,6 @@ export function NotebookWorkspace() {
     documentDetailQuery.data?.id === activeDocumentId
       ? documentDetailQuery.data
       : undefined;
-  const activeNotebook = notebooks.find(
-    (notebook) => notebook.id === activeNotebookId,
-  );
   const activeNotebookSession = activeNotebookId
     ? (notebookSessions[activeNotebookId] ?? createEmptyNotebookSession())
     : createEmptyNotebookSession();
@@ -170,10 +258,9 @@ export function NotebookWorkspace() {
   const sourceCountsByNotebookId = Object.fromEntries(
     notebooks.map((notebook) => [
       notebook.id,
-      getNotebookSourceCount(
-        notebookSessions[notebook.id] ?? createEmptyNotebookSession(),
-        currentDocuments.length,
-      ),
+      notebook.id === activeNotebookId
+        ? currentDocuments.length
+        : notebook.sourceCount,
     ]),
   );
   const insightCountsByNotebookId = Object.fromEntries(
@@ -184,18 +271,27 @@ export function NotebookWorkspace() {
     ]),
   );
 
+  async function invalidateActiveNotebookData() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY }),
+      queryClient.invalidateQueries({
+        queryKey: [...DOCUMENTS_QUERY_KEY, activeNotebookId],
+      }),
+    ]);
+  }
+
   function handleUploadFiles(files: FileList | null) {
-    if (!files || files.length === 0) {
+    if (!files || files.length === 0 || !activeNotebookId) {
       return;
     }
 
-    void uploadFiles(Array.from(files));
+    void uploadFiles(Array.from(files), activeNotebookId);
   }
 
-  async function uploadFiles(files: File[]) {
+  async function uploadFiles(files: File[], notebookId: string) {
     try {
       for (const file of files) {
-        await uploadMutation.mutateAsync(file);
+        await uploadMutation.mutateAsync({ file, notebookId });
       }
     } catch (error) {
       setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE));
@@ -266,20 +362,6 @@ export function NotebookWorkspace() {
     updateNotebookSession(activeNotebookId, () => ({ question }));
   }
 
-  function createNotebook() {
-    const notebook = createNotebookSummary(
-      notebooks.length,
-      new Date().toISOString(),
-    );
-    setNotebooks((current) => [...current, notebook]);
-    setNotebookSessions((current) => ({
-      ...current,
-      [notebook.id]: createEmptyNotebookSession(),
-    }));
-    setActiveNotebookId(notebook.id);
-    setNotebookSearch("");
-  }
-
   function editNotebook(notebookId: string) {
     const notebook = notebooks.find((candidate) => candidate.id === notebookId);
     if (!notebook) {
@@ -295,75 +377,24 @@ export function NotebookWorkspace() {
       return;
     }
 
-    setNotebooks((current) =>
-      current.map((notebook) =>
-        notebook.id === editingNotebookId
-          ? updateNotebookFromDraft(notebook, notebookDraft)
-          : notebook,
-      ),
-    );
-    setEditingNotebookId(undefined);
-    setNotebookDraft(createNotebookEditorDraft());
+    updateNotebookMutation.mutate({
+      category: notebookDraft.category,
+      description: notebookDraft.description,
+      notebookId: editingNotebookId,
+      title: notebookDraft.title,
+    });
   }
 
-  function duplicateNotebook(notebookId: string) {
-    const notebook = notebooks.find((candidate) => candidate.id === notebookId);
-    if (!notebook) {
+  function sendInvite() {
+    if (!activeNotebookId) {
       return;
     }
 
-    const duplicatedNotebook = duplicateNotebookSummary(
-      notebook,
-      notebooks.length,
-      new Date().toISOString(),
-    );
-    setNotebooks((current) => [...current, duplicatedNotebook]);
-    setNotebookSessions((current) => ({
-      ...current,
-      [duplicatedNotebook.id]: {
-        ...(current[notebookId] ?? createEmptyNotebookSession()),
-        conversationId: undefined,
-        messages: [],
-        statusText: undefined,
-      },
-    }));
-    setActiveNotebookId(duplicatedNotebook.id);
-    setNotebookSearch("");
-  }
-
-  function deleteNotebook(notebookId: string) {
-    setNotebooks((current) =>
-      current.filter((notebook) => notebook.id !== notebookId),
-    );
-    setNotebookSessions((current) => {
-      const next = { ...current };
-      delete next[notebookId];
-      return next;
+    inviteNotebookMemberMutation.mutate({
+      email: notebookInviteDraft.email,
+      notebookId: activeNotebookId,
+      role: notebookInviteDraft.role,
     });
-    if (activeNotebookId === notebookId) {
-      setActiveNotebookId(undefined);
-    }
-    if (editingNotebookId === notebookId) {
-      setEditingNotebookId(undefined);
-      setNotebookDraft(createNotebookEditorDraft());
-    }
-  }
-
-  function renameNotebook(notebookId: string, title: string) {
-    setNotebooks((current) =>
-      current.map((notebook) =>
-        notebook.id === notebookId
-          ? {
-              ...notebook,
-              category:
-                notebook.category === "New workspace"
-                  ? "Member notebook"
-                  : notebook.category,
-              title,
-            }
-          : notebook,
-      ),
-    );
   }
 
   return (
@@ -388,7 +419,10 @@ export function NotebookWorkspace() {
         Boolean(activeDocumentId) && documentDetailQuery.isFetching
       }
       isDocumentsLoading={documentsQuery.isLoading}
+      isInviteMemberVisible={isInviteMemberVisible}
+      isInvitingMember={inviteNotebookMemberMutation.isPending}
       isNotebookListVisible={!activeNotebookId}
+      isNotebooksLoading={notebooksQuery.isLoading}
       isUploading={uploadMutation.isPending}
       messages={activeNotebookSession.messages}
       onAskQuestion={() => askMutation.mutate()}
@@ -397,19 +431,32 @@ export function NotebookWorkspace() {
         setEditingNotebookId(undefined);
         setNotebookDraft(createNotebookEditorDraft());
       }}
-      onCreateNotebook={createNotebook}
+      onCancelInviteMember={() => {
+        setIsInviteMemberVisible(false);
+        setNotebookInviteDraft(createNotebookInviteDraft());
+      }}
+      onCreateNotebook={() => createNotebookMutation.mutate()}
       onDismissUnavailableFeature={() => setActiveUnavailableFeature(undefined)}
-      onDeleteNotebook={deleteNotebook}
-      onDeleteDocument={(documentId) => deleteMutation.mutate(documentId)}
-      onDuplicateNotebook={duplicateNotebook}
+      onDeleteNotebook={(notebookId) => deleteNotebookMutation.mutate(notebookId)}
+      onDeleteDocument={(documentId) => {
+        if (activeNotebookId) {
+          deleteMutation.mutate({ documentId, notebookId: activeNotebookId });
+        }
+      }}
       onEditNotebook={editNotebook}
+      onInviteDraftChange={setNotebookInviteDraft}
       onNewThread={startNewThread}
       onOpenDocument={setActiveDocumentId}
       onNotebookDraftChange={setNotebookDraft}
       onNotebookSearchChange={setNotebookSearch}
       onQuestionChange={changeQuestion}
       onSaveNotebook={saveNotebook}
-      onSelectNotebook={setActiveNotebookId}
+      onSendInvite={sendInvite}
+      onStartInviteMember={() => setIsInviteMemberVisible(true)}
+      onSelectNotebook={(notebookId) => {
+        setActiveNotebookId(notebookId);
+        setActiveDocumentId(undefined);
+      }}
       onShowChat={() => setActiveDocumentId(undefined)}
       onSignIn={() => void auth.signIn()}
       onSignOut={() => void auth.signOut()}
@@ -420,10 +467,18 @@ export function NotebookWorkspace() {
       operationError={
         uploadBatchError ??
         toErrorMessage(
-          uploadMutation.error ?? deleteMutation.error ?? askMutation.error,
+          createNotebookMutation.error ??
+            updateNotebookMutation.error ??
+            deleteNotebookMutation.error ??
+            inviteNotebookMemberMutation.error ??
+            uploadMutation.error ??
+            deleteMutation.error ??
+            askMutation.error,
         )
       }
+      notebooksError={toErrorMessage(notebooksQuery.error)}
       notebookDraft={notebookDraft}
+      notebookInviteDraft={notebookInviteDraft}
       notebookSearch={notebookSearch}
       notebooks={notebooks}
       question={activeNotebookSession.question}
