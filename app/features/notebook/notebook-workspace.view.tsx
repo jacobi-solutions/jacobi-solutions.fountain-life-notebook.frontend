@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent, MouseEvent } from "react";
+import type { FormEvent } from "react";
 import type { NotebookSummary, NotebookWorkspaceModel } from "./notebook-workspace.model";
 import {
   filterNotebooks,
@@ -211,11 +211,8 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
     model.onAskQuestion();
   }
 
-  function scrollToWorkspaceSection(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
-    event.preventDefault();
+  function showWorkspaceSection(sectionId: string) {
     setActiveWorkspaceSection(sectionId);
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.history.replaceState(null, "", `#${sectionId}`);
   }
 
   return (
@@ -235,30 +232,33 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
       </section>
 
       <nav className="mobile-workspace-tabs" aria-label="Notebook workspace sections">
-        <a
+        <button
+          type="button"
           aria-current={activeWorkspaceSection === "notebook-sources" ? "page" : undefined}
           className={activeWorkspaceSection === "notebook-sources" ? "active" : undefined}
-          href="#notebook-sources"
-          onClick={(event) => scrollToWorkspaceSection(event, "notebook-sources")}
+          aria-controls="notebook-sources"
+          onClick={() => showWorkspaceSection("notebook-sources")}
         >
           Sources
-        </a>
-        <a
+        </button>
+        <button
+          type="button"
           aria-current={activeWorkspaceSection === "notebook-chat" ? "page" : undefined}
           className={activeWorkspaceSection === "notebook-chat" ? "active" : undefined}
-          href="#notebook-chat"
-          onClick={(event) => scrollToWorkspaceSection(event, "notebook-chat")}
+          aria-controls="notebook-chat"
+          onClick={() => showWorkspaceSection("notebook-chat")}
         >
           Chat
-        </a>
-        <a
+        </button>
+        <button
+          type="button"
           aria-current={activeWorkspaceSection === "notebook-studio" ? "page" : undefined}
           className={activeWorkspaceSection === "notebook-studio" ? "active" : undefined}
-          href="#notebook-studio"
-          onClick={(event) => scrollToWorkspaceSection(event, "notebook-studio")}
+          aria-controls="notebook-studio"
+          onClick={() => showWorkspaceSection("notebook-studio")}
         >
           Studio
-        </a>
+        </button>
       </nav>
 
       <section className="insight-strip" aria-label="Notebook status overview">
@@ -281,7 +281,11 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
       </section>
 
       <section className="notebook-layout" aria-label="Notebook workspace">
-        <aside className="document-panel" id="notebook-sources" aria-label="Document library">
+        <aside
+          className={`document-panel workspace-panel ${activeWorkspaceSection === "notebook-sources" ? "active" : ""}`}
+          id="notebook-sources"
+          aria-label="Document library"
+        >
           <div className="panel-heading">
             <div>
               <p>Sources</p>
@@ -369,7 +373,11 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           </div>
         </aside>
 
-        <section className="chat-panel" id="notebook-chat" aria-label="Notebook chat">
+        <section
+          className={`chat-panel workspace-panel ${activeWorkspaceSection === "notebook-chat" ? "active" : ""}`}
+          id="notebook-chat"
+          aria-label="Notebook chat"
+        >
           <div className="panel-heading">
             <div>
               <p>{model.conversationId ?? model.activeNotebook?.category ?? "New thread"}</p>
@@ -447,7 +455,11 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           </form>
         </section>
 
-        <aside className="studio-panel" id="notebook-studio" aria-label="Notebook studio">
+        <aside
+          className={`studio-panel workspace-panel ${activeWorkspaceSection === "notebook-studio" ? "active" : ""}`}
+          id="notebook-studio"
+          aria-label="Notebook studio"
+        >
           <div className="panel-heading">
             <div>
               <p>Studio</p>

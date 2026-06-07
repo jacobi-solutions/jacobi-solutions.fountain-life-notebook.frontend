@@ -1267,17 +1267,25 @@
     backdrop-filter: blur(14px);
   }
 
-  .mobile-workspace-tabs a {
+  .mobile-workspace-tabs button {
     position: relative;
     display: grid;
     min-height: 3.05rem;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
     place-items: center;
     color: rgba(247, 247, 242, 0.82);
     font-weight: 700;
+    background: transparent;
     text-decoration: none;
   }
 
-  .mobile-workspace-tabs a::after {
+  .mobile-workspace-tabs button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .mobile-workspace-tabs button::after {
     position: absolute;
     right: 18%;
     bottom: 0;
@@ -1288,22 +1296,22 @@
     content: "";
   }
 
-  .mobile-workspace-tabs a.active,
-  .mobile-workspace-tabs a[aria-current="page"] {
+  .mobile-workspace-tabs button.active,
+  .mobile-workspace-tabs button[aria-current="page"] {
     color: #ffffff;
   }
 
-  .mobile-workspace-tabs a.active::after,
-  .mobile-workspace-tabs a[aria-current="page"]::after {
+  .mobile-workspace-tabs button.active::after,
+  .mobile-workspace-tabs button[aria-current="page"]::after {
     background: var(--fl-aqua);
   }
 
-  .mobile-workspace-tabs a:focus-visible {
+  .mobile-workspace-tabs button:focus-visible {
     outline: 0;
     box-shadow: inset 0 0 0 2px rgba(134, 215, 242, 0.78);
   }
 
-  .mobile-workspace-tabs a:hover {
+  .mobile-workspace-tabs button:hover {
     color: #ffffff;
   }
 
@@ -1314,9 +1322,21 @@
   .document-panel,
   .chat-panel,
   .studio-panel {
-    scroll-margin-top: 3.4rem;
     border-radius: 8px;
     padding: 0.82rem;
+  }
+
+  .workspace-panel {
+    display: none;
+  }
+
+  .document-panel.workspace-panel.active,
+  .studio-panel.workspace-panel.active {
+    display: flex;
+  }
+
+  .chat-panel.workspace-panel.active {
+    display: grid;
   }
 
   .chat-panel {
