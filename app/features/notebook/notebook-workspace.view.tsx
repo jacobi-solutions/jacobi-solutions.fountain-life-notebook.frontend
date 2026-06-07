@@ -25,6 +25,8 @@ const WORKING_FEATURES = [
   "Start a fresh chat thread inside a notebook.",
 ];
 
+const APP_VERSION = "v0.3.0";
+
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
     <main className={`notebook-shell ${model.isNotebookListVisible ? "notebook-shell-gallery" : "notebook-shell-detail"}`}>
@@ -72,6 +74,10 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
       </header>
 
       {model.isNotebookListVisible ? <NotebookGallery model={model} /> : <NotebookDetail model={model} />}
+      <footer className="notebook-footer" aria-label="Application version">
+        <span>Fountain Life Notebook {APP_VERSION}</span>
+        <span>&copy; 2026 Fountain Life</span>
+      </footer>
       {model.editingNotebook ? <NotebookEditor model={model} /> : null}
     </main>
   );

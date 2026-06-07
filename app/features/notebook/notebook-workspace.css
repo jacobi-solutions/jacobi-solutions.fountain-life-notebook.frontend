@@ -492,6 +492,24 @@
   margin: 0 auto;
 }
 
+.notebook-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: none;
+  margin: clamp(1.1rem, 2vw, 1.6rem) auto 0;
+  padding: 0.72rem 0 0;
+  color: rgba(247, 247, 242, 0.52);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.notebook-footer span {
+  min-width: 0;
+}
+
 .document-panel,
 .chat-panel,
 .studio-panel {
@@ -1317,6 +1335,13 @@
 
   .notebook-layout {
     gap: 0.75rem;
+  }
+
+  .notebook-footer {
+    flex-wrap: wrap;
+    margin-top: 0.9rem;
+    padding-top: 0.55rem;
+    font-size: 0.74rem;
   }
 
   .document-panel,
