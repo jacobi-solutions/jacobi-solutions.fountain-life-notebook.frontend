@@ -25,7 +25,7 @@ Ramin/
   fountain-life-notebook.frontend/
 ```
 
-From `/Users/shanedrye/jacobi/Ramin/FountainLifeNotebook.Backend`:
+From the sibling backend repo:
 
 ```bash
 docker compose -f docker-compose.local.yml up
@@ -61,6 +61,33 @@ VITE_LOCAL_AUTH_EMAIL=local.user@fountainlife.local
 ```
 
 To use Cognito instead, set `VITE_AUTH_MODE=cognito` and provide `VITE_COGNITO_AUTHORITY`, `VITE_COGNITO_CLIENT_ID`, and `VITE_COGNITO_REDIRECT_URI`.
+
+## AWS Static Deployment
+
+The AWS-ready foundation lives in the sibling infra repo:
+
+```text
+../JacobiSolutions.FountainLifeNotebook.Infra
+```
+
+The intended frontend deployment path is:
+
+1. GitHub Actions typechecks, tests, and builds the static SPA.
+2. `build/client` is synced to a private S3 bucket.
+3. CloudFront serves the S3 bucket and rewrites SPA routes back to `index.html`.
+4. CloudFront proxies `/api/*` to the backend load balancer.
+
+For the deployed static build, Vite variables are compile-time values. Use the Terraform `github_frontend_repository_variables` output to set GitHub repository variables:
+
+```bash
+VITE_API_BASE_URL=/api
+VITE_AUTH_MODE=cognito
+VITE_COGNITO_AUTHORITY=https://cognito-idp.<region>.amazonaws.com/<user-pool-id>
+VITE_COGNITO_CLIENT_ID=<app-client-id>
+VITE_COGNITO_REDIRECT_URI=https://<cloudfront-domain>
+```
+
+Run the manual `Deploy Static Site` GitHub Actions workflow only after Terraform has created the S3 bucket, CloudFront distribution, Cognito app client, and GitHub OIDC role.
 
 ## Contracts
 
