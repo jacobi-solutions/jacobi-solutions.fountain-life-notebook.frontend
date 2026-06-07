@@ -211,6 +211,44 @@ export interface ListDocumentsResponse {
   documents: DocumentSummary[];
 }
 
+export interface ViewDocumentRequest {
+  correlationId?: string;
+  documentId: string;
+}
+
+export interface DocumentContentSection {
+  chunkIndex: number;
+  text: string;
+}
+
+export type DocumentDetailStatus = typeof DocumentDetailStatus[keyof typeof DocumentDetailStatus];
+
+
+export const DocumentDetailStatus = {
+  failed: 'failed',
+  ready: 'ready',
+} as const;
+
+export interface DocumentDetail {
+  byteSize: number;
+  chunkCount: number;
+  contentType: string;
+  createdDateUtc: string;
+  id: string;
+  lastUpdatedDateUtc: string;
+  originalFileName: string;
+  status: DocumentDetailStatus;
+  textPreview?: string;
+  chunks: DocumentContentSection[];
+}
+
+export interface ViewDocumentResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  document: DocumentDetail;
+}
+
 export interface DeleteDocumentRequest {
   correlationId?: string;
   documentId: string;
@@ -457,6 +495,39 @@ export const listDocuments = async (listDocumentsRequest: ListDocumentsRequest, 
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(listDocumentsRequest)
+  }
+);}
+
+
+
+export type viewDocumentResponse200 = {
+  data: ViewDocumentResponse
+  status: 200
+}
+
+export type viewDocumentResponseSuccess = (viewDocumentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type viewDocumentResponse = (viewDocumentResponseSuccess)
+
+export const getViewDocumentUrl = () => {
+
+
+
+
+  return `/documents/view-document`
+}
+
+export const viewDocument = async (viewDocumentRequest: ViewDocumentRequest, options?: RequestInit): Promise<viewDocumentResponse> => {
+
+  return generatedApiClient<viewDocumentResponse>(getViewDocumentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(viewDocumentRequest)
   }
 );}
 

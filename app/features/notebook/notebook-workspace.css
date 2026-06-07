@@ -17,8 +17,17 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
   background:
-    linear-gradient(90deg, rgba(5, 7, 11, 0.96) 0%, rgba(7, 10, 15, 0.78) 54%, rgba(5, 7, 11, 0.94) 100%),
-    radial-gradient(circle at 74% 28%, rgba(134, 215, 242, 0.24), transparent 16rem);
+    linear-gradient(
+      90deg,
+      rgba(5, 7, 11, 0.96) 0%,
+      rgba(7, 10, 15, 0.78) 54%,
+      rgba(5, 7, 11, 0.94) 100%
+    ),
+    radial-gradient(
+      circle at 74% 28%,
+      rgba(134, 215, 242, 0.24),
+      transparent 16rem
+    );
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36);
   content: "";
   pointer-events: none;
@@ -298,7 +307,11 @@
   color: #ffffff;
   text-align: center;
   background:
-    linear-gradient(135deg, rgba(134, 215, 242, 0.1), rgba(214, 180, 103, 0.08)),
+    linear-gradient(
+      135deg,
+      rgba(134, 215, 242, 0.1),
+      rgba(214, 180, 103, 0.08)
+    ),
     rgba(255, 255, 255, 0.035);
 }
 
@@ -327,28 +340,44 @@
   text-align: left;
   background:
     linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.76)),
-    radial-gradient(circle at 22% 14%, rgba(134, 215, 242, 0.34), transparent 9rem),
+    radial-gradient(
+      circle at 22% 14%,
+      rgba(134, 215, 242, 0.34),
+      transparent 9rem
+    ),
     rgba(10, 15, 22, 0.9);
 }
 
 .notebook-card-gold .notebook-card-open {
   background:
     linear-gradient(180deg, rgba(5, 7, 11, 0.03), rgba(5, 7, 11, 0.78)),
-    radial-gradient(circle at 24% 18%, rgba(214, 180, 103, 0.4), transparent 9rem),
+    radial-gradient(
+      circle at 24% 18%,
+      rgba(214, 180, 103, 0.4),
+      transparent 9rem
+    ),
     rgba(19, 17, 11, 0.92);
 }
 
 .notebook-card-graphite .notebook-card-open {
   background:
     linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.78)),
-    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.2), transparent 9rem),
+    radial-gradient(
+      circle at 24% 18%,
+      rgba(255, 255, 255, 0.2),
+      transparent 9rem
+    ),
     rgba(18, 22, 28, 0.94);
 }
 
 .notebook-card-violet .notebook-card-open {
   background:
     linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.78)),
-    radial-gradient(circle at 24% 18%, rgba(174, 148, 216, 0.32), transparent 9rem),
+    radial-gradient(
+      circle at 24% 18%,
+      rgba(174, 148, 216, 0.32),
+      transparent 9rem
+    ),
     rgba(20, 16, 27, 0.94);
 }
 
@@ -485,11 +514,19 @@
 
 .notebook-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 0.74fr) minmax(520px, 1.72fr) minmax(300px, 0.78fr);
+  grid-template-columns: minmax(300px, 0.74fr) minmax(520px, 1.72fr) minmax(
+      300px,
+      0.78fr
+    );
   gap: clamp(1rem, 1.4vw, 1.5rem);
   width: 100%;
   max-width: none;
   margin: 0 auto;
+}
+
+.notebook-shell-detail {
+  display: flex;
+  flex-direction: column;
 }
 
 .document-panel,
@@ -519,7 +556,7 @@
 
 .chat-panel {
   display: grid;
-  grid-template-rows: auto minmax(22rem, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   min-height: calc(100vh - 14rem);
   padding: 1rem;
 }
@@ -530,6 +567,13 @@
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.9rem;
+}
+
+.panel-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .panel-heading h2 {
@@ -587,7 +631,11 @@
   color: #ffffff;
   text-align: center;
   background:
-    linear-gradient(135deg, rgba(134, 215, 242, 0.12), rgba(255, 255, 255, 0.03)),
+    linear-gradient(
+      135deg,
+      rgba(134, 215, 242, 0.12),
+      rgba(255, 255, 255, 0.03)
+    ),
     rgba(255, 255, 255, 0.04);
   cursor: pointer;
 }
@@ -674,6 +722,11 @@
   background: rgba(134, 215, 242, 0.12);
 }
 
+.document-row.open {
+  border-color: rgba(214, 180, 103, 0.62);
+  box-shadow: inset 3px 0 0 rgba(214, 180, 103, 0.82);
+}
+
 .document-row label {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -699,6 +752,13 @@
 .document-row strong {
   color: #ffffff;
   font-weight: 650;
+}
+
+.document-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
 
 .message-list {
@@ -762,9 +822,92 @@
   font-size: 0.85rem;
 }
 
+.citation-source-button {
+  display: block;
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  color: #ffffff;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-align: left;
+}
+
+.citation-source-button:hover {
+  color: var(--fl-aqua);
+  transform: none;
+}
+
 .citation-list p {
   color: rgba(247, 247, 242, 0.72);
   font-size: 0.9rem;
+}
+
+.document-reader {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.document-reader-header {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  padding: 0.82rem;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.document-reader-header strong,
+.document-reader-header span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.document-reader-header strong {
+  color: #ffffff;
+  font-size: 1.02rem;
+}
+
+.document-reader-header span,
+.document-reader-section span {
+  color: rgba(247, 247, 242, 0.64);
+  font-size: 0.78rem;
+}
+
+.document-reader-body {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.document-reader-section {
+  border-left: 3px solid rgba(134, 215, 242, 0.52);
+  padding: 0.15rem 0 0.25rem 0.85rem;
+}
+
+.document-reader-section span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.document-reader-section p {
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.document-reader-empty {
+  min-height: 12rem;
 }
 
 .question-box {
@@ -909,7 +1052,11 @@
   padding: 0.8rem;
   color: rgba(247, 247, 242, 0.78);
   background:
-    linear-gradient(135deg, rgba(134, 215, 242, 0.1), rgba(255, 255, 255, 0.035)),
+    linear-gradient(
+      135deg,
+      rgba(134, 215, 242, 0.1),
+      rgba(255, 255, 255, 0.035)
+    ),
     rgba(5, 7, 11, 0.52);
 }
 
@@ -1013,6 +1160,91 @@
   gap: 0.65rem;
 }
 
+@media (min-width: 921px) {
+  .notebook-shell-detail {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .notebook-shell-detail .notebook-ribbon {
+    display: none;
+  }
+
+  .notebook-shell-detail .notebook-topbar {
+    align-items: center;
+    margin-bottom: 0.65rem;
+    padding: 0.3rem 0 0.65rem;
+  }
+
+  .notebook-shell-detail .brand-cluster {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .notebook-shell-detail .notebook-eyebrow {
+    margin-bottom: 0.3rem;
+  }
+
+  .notebook-shell-detail .notebook-topbar h1 {
+    max-width: none;
+    font-size: clamp(1.8rem, 3vw, 2.65rem);
+    font-weight: 520;
+    line-height: 1.08;
+  }
+
+  .notebook-shell-detail .notebook-actionbar,
+  .notebook-shell-detail .insight-strip {
+    margin-bottom: 0.65rem;
+  }
+
+  .notebook-shell-detail .insight-strip div {
+    padding: 0.62rem 0.85rem;
+  }
+
+  .notebook-shell-detail .notebook-topbar {
+    flex: 0 0 auto;
+  }
+
+  .notebook-shell-detail .notebook-actionbar,
+  .notebook-shell-detail .insight-strip {
+    flex: 0 0 auto;
+  }
+
+  .notebook-shell-detail .notebook-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .notebook-shell-detail .document-panel,
+  .notebook-shell-detail .chat-panel,
+  .notebook-shell-detail .studio-panel {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .notebook-shell-detail .document-panel,
+  .notebook-shell-detail .studio-panel {
+    overflow: auto;
+  }
+
+  .notebook-shell-detail .notebook-empty-workspace {
+    min-height: 0;
+    align-content: start;
+    padding: 1rem;
+  }
+
+  .notebook-shell-detail .notebook-empty-workspace strong {
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+  }
+
+  .notebook-shell-detail .drop-zone-preview {
+    min-height: 6.5rem;
+  }
+}
+
 @media (max-width: 920px) {
   .notebook-topbar {
     display: grid;
@@ -1061,8 +1293,17 @@
     border-width: 0 0 1px;
     border-radius: 0;
     background:
-      linear-gradient(180deg, rgba(5, 7, 11, 0.98) 0%, rgba(7, 10, 15, 0.88) 58%, rgba(5, 7, 11, 0) 100%),
-      radial-gradient(circle at 82% 18%, rgba(134, 215, 242, 0.2), transparent 10rem);
+      linear-gradient(
+        180deg,
+        rgba(5, 7, 11, 0.98) 0%,
+        rgba(7, 10, 15, 0.88) 58%,
+        rgba(5, 7, 11, 0) 100%
+      ),
+      radial-gradient(
+        circle at 82% 18%,
+        rgba(134, 215, 242, 0.2),
+        transparent 10rem
+      );
     box-shadow: none;
   }
 

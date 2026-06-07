@@ -1,6 +1,9 @@
 import type { AuthSnapshot } from "../../services/auth-service";
 import type { AssistantThreadUpdate } from "../../services/assistant-service";
-import type { DocumentSummary } from "../../services/documents-service";
+import type {
+  DocumentDetail,
+  DocumentSummary,
+} from "../../services/documents-service";
 
 export type NotebookTone = "aqua" | "gold" | "graphite" | "violet";
 
@@ -22,6 +25,9 @@ export interface NotebookEditorDraft {
 
 export interface NotebookWorkspaceModel {
   activeNotebook?: NotebookSummary;
+  activeDocument?: DocumentDetail;
+  activeDocumentError?: string;
+  activeDocumentId?: string;
   activeUnavailableFeature?: string;
   authState: AuthSnapshot;
   conversationId?: string;
@@ -33,6 +39,7 @@ export interface NotebookWorkspaceModel {
   isAsking: boolean;
   isDeleting: boolean;
   isDocumentsLoading: boolean;
+  isDocumentLoading: boolean;
   isNotebookListVisible: boolean;
   isUploading: boolean;
   messages: AssistantThreadUpdate[];
@@ -46,10 +53,12 @@ export interface NotebookWorkspaceModel {
   onDuplicateNotebook: (notebookId: string) => void;
   onEditNotebook: (notebookId: string) => void;
   onNewThread: () => void;
+  onOpenDocument: (documentId: string) => void;
   onNotebookDraftChange: (draft: NotebookEditorDraft) => void;
   onNotebookSearchChange: (query: string) => void;
   onQuestionChange: (question: string) => void;
   onSaveNotebook: () => void;
+  onShowChat: () => void;
   onSelectNotebook: (notebookId: string) => void;
   onSignIn: () => void;
   onSignOut: () => void;

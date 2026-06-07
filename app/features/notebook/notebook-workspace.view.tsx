@@ -1,6 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import type { NotebookSummary, NotebookWorkspaceModel } from "./notebook-workspace.model";
+import type {
+  NotebookSummary,
+  NotebookWorkspaceModel,
+} from "./notebook-workspace.model";
 import {
   filterNotebooks,
   formatNotebookDate,
@@ -27,8 +30,12 @@ const WORKING_FEATURES = [
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
-    <main className={`notebook-shell ${model.isNotebookListVisible ? "notebook-shell-gallery" : "notebook-shell-detail"}`}>
-      <div className="notebook-ribbon">AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care</div>
+    <main
+      className={`notebook-shell ${model.isNotebookListVisible ? "notebook-shell-gallery" : "notebook-shell-detail"}`}
+    >
+      <div className="notebook-ribbon">
+        AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care
+      </div>
       <header className="notebook-topbar">
         <div className="brand-cluster" aria-label="Fountain Life Notebook">
           <div className="brand-lockup">
@@ -60,7 +67,11 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
             {model.authState.status}
           </span>
           {model.authState.status === "authenticated" ? (
-            <button type="button" className="ghost-button" onClick={model.onSignOut}>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={model.onSignOut}
+            >
               Sign out
             </button>
           ) : (
@@ -71,27 +82,41 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         </div>
       </header>
 
-      {model.isNotebookListVisible ? <NotebookGallery model={model} /> : <NotebookDetail model={model} />}
+      {model.isNotebookListVisible ? (
+        <NotebookGallery model={model} />
+      ) : (
+        <NotebookDetail model={model} />
+      )}
       {model.editingNotebook ? <NotebookEditor model={model} /> : null}
     </main>
   );
 }
 
 function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
-  const visibleNotebooks = filterNotebooks(model.notebooks, model.notebookSearch);
-  const featuredNotebooks = visibleNotebooks.filter((notebook) => notebook.featured);
+  const visibleNotebooks = filterNotebooks(
+    model.notebooks,
+    model.notebookSearch,
+  );
+  const featuredNotebooks = visibleNotebooks.filter(
+    (notebook) => notebook.featured,
+  );
   const recentNotebooks = orderNotebooksByMostRecent(visibleNotebooks);
 
   return (
     <>
-      <section className="notebook-gallery-toolbar" aria-label="Notebook controls">
+      <section
+        className="notebook-gallery-toolbar"
+        aria-label="Notebook controls"
+      >
         <label className="notebook-search">
           <span>Search notebooks</span>
           <input
             type="search"
             value={model.notebookSearch}
             placeholder="Search notebooks"
-            onChange={(event) => model.onNotebookSearchChange(event.currentTarget.value)}
+            onChange={(event) =>
+              model.onNotebookSearchChange(event.currentTarget.value)
+            }
           />
         </label>
         <button type="button" onClick={model.onCreateNotebook}>
@@ -100,15 +125,26 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
       </section>
 
       {featuredNotebooks.length > 0 ? (
-        <NotebookCardSection heading="Featured notebooks" model={model} notebooks={featuredNotebooks} />
+        <NotebookCardSection
+          heading="Featured notebooks"
+          model={model}
+          notebooks={featuredNotebooks}
+        />
       ) : null}
 
-      <section className="notebook-card-section" aria-labelledby="recent-notebooks-heading">
+      <section
+        className="notebook-card-section"
+        aria-labelledby="recent-notebooks-heading"
+      >
         <div className="section-heading">
           <h2 id="recent-notebooks-heading">Recent notebooks</h2>
         </div>
         <div className="notebook-card-grid">
-          <button type="button" className="create-notebook-card" onClick={model.onCreateNotebook}>
+          <button
+            type="button"
+            className="create-notebook-card"
+            onClick={model.onCreateNotebook}
+          >
             <span aria-hidden="true">+</span>
             <strong>Create new notebook</strong>
           </button>
@@ -166,7 +202,8 @@ function NotebookCard({
         <strong>{notebook.title}</strong>
         <small>{notebook.description}</small>
         <span className="notebook-card-meta">
-          {formatNotebookDate(notebook.createdDateUtc)} / {model.sourceCountsByNotebookId[notebook.id] ?? 0} sources
+          {formatNotebookDate(notebook.createdDateUtc)} /{" "}
+          {model.sourceCountsByNotebookId[notebook.id] ?? 0} sources
           {model.insightCountsByNotebookId[notebook.id]
             ? ` / ${model.insightCountsByNotebookId[notebook.id]} insights`
             : ""}
@@ -179,16 +216,29 @@ function NotebookCard({
           <span aria-hidden="true" />
         </summary>
         <div className="notebook-card-menu-popover">
-          <button type="button" onClick={() => model.onSelectNotebook(notebook.id)}>
+          <button
+            type="button"
+            onClick={() => model.onSelectNotebook(notebook.id)}
+          >
             Open
           </button>
-          <button type="button" onClick={() => model.onEditNotebook(notebook.id)}>
+          <button
+            type="button"
+            onClick={() => model.onEditNotebook(notebook.id)}
+          >
             Rename
           </button>
-          <button type="button" onClick={() => model.onDuplicateNotebook(notebook.id)}>
+          <button
+            type="button"
+            onClick={() => model.onDuplicateNotebook(notebook.id)}
+          >
             Duplicate
           </button>
-          <button type="button" className="danger-button" onClick={() => model.onDeleteNotebook(notebook.id)}>
+          <button
+            type="button"
+            className="danger-button"
+            onClick={() => model.onDeleteNotebook(notebook.id)}
+          >
             Delete
           </button>
         </div>
@@ -198,9 +248,12 @@ function NotebookCard({
 }
 
 function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
-  const [activeWorkspaceSection, setActiveWorkspaceSection] = useState("notebook-sources");
+  const [activeWorkspaceSection, setActiveWorkspaceSection] =
+    useState("notebook-sources");
   const selectedCount = model.selectedDocumentIds.length;
-  const allDocumentsSelected = model.documents.length > 0 && selectedCount === model.documents.length;
+  const allDocumentsSelected =
+    model.documents.length > 0 && selectedCount === model.documents.length;
+  const isViewingDocument = Boolean(model.activeDocumentId);
   const canAsk =
     model.authState.status === "authenticated" &&
     model.question.trim().length > 0 &&
@@ -218,11 +271,19 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   return (
     <>
       <section className="notebook-actionbar" aria-label="Notebook actions">
-        <button type="button" className="ghost-button" onClick={model.onBackToNotebooks}>
+        <button
+          type="button"
+          className="ghost-button"
+          onClick={model.onBackToNotebooks}
+        >
           All notebooks
         </button>
         {model.activeNotebook ? (
-          <button type="button" className="ghost-button" onClick={() => model.onEditNotebook(model.activeNotebook!.id)}>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => model.onEditNotebook(model.activeNotebook!.id)}
+          >
             Rename
           </button>
         ) : null}
@@ -231,11 +292,18 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         </button>
       </section>
 
-      <nav className="mobile-workspace-tabs" aria-label="Notebook workspace sections">
+      <nav
+        className="mobile-workspace-tabs"
+        aria-label="Notebook workspace sections"
+      >
         <button
           type="button"
-          aria-current={activeWorkspaceSection === "notebook-sources" ? "page" : undefined}
-          className={activeWorkspaceSection === "notebook-sources" ? "active" : undefined}
+          aria-current={
+            activeWorkspaceSection === "notebook-sources" ? "page" : undefined
+          }
+          className={
+            activeWorkspaceSection === "notebook-sources" ? "active" : undefined
+          }
           aria-controls="notebook-sources"
           onClick={() => showWorkspaceSection("notebook-sources")}
         >
@@ -243,8 +311,12 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         </button>
         <button
           type="button"
-          aria-current={activeWorkspaceSection === "notebook-chat" ? "page" : undefined}
-          className={activeWorkspaceSection === "notebook-chat" ? "active" : undefined}
+          aria-current={
+            activeWorkspaceSection === "notebook-chat" ? "page" : undefined
+          }
+          className={
+            activeWorkspaceSection === "notebook-chat" ? "active" : undefined
+          }
           aria-controls="notebook-chat"
           onClick={() => showWorkspaceSection("notebook-chat")}
         >
@@ -252,8 +324,12 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         </button>
         <button
           type="button"
-          aria-current={activeWorkspaceSection === "notebook-studio" ? "page" : undefined}
-          className={activeWorkspaceSection === "notebook-studio" ? "active" : undefined}
+          aria-current={
+            activeWorkspaceSection === "notebook-studio" ? "page" : undefined
+          }
+          className={
+            activeWorkspaceSection === "notebook-studio" ? "active" : undefined
+          }
           aria-controls="notebook-studio"
           onClick={() => showWorkspaceSection("notebook-studio")}
         >
@@ -311,12 +387,19 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                 event.currentTarget.value = "";
               }}
             />
-            <span>{model.isUploading ? "Uploading..." : "Upload source files"}</span>
+            <span>
+              {model.isUploading ? "Uploading..." : "Upload source files"}
+            </span>
             <small>PDF, TXT, Markdown</small>
           </label>
 
-          <div className="source-search-shell" aria-label="Source search features in progress">
-            <span className="source-search-heading">Search the web for new sources</span>
+          <div
+            className="source-search-shell"
+            aria-label="Source search features in progress"
+          >
+            <span className="source-search-heading">
+              Search the web for new sources
+            </span>
             <div>
               {["Web", "Fast Research"].map((featureName) => (
                 <button
@@ -331,20 +414,31 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             </div>
           </div>
 
-          {model.documentsError ? <p className="inline-error">{model.documentsError}</p> : null}
+          {model.documentsError ? (
+            <p className="inline-error">{model.documentsError}</p>
+          ) : null}
 
           <div className="document-list" aria-busy={model.isDocumentsLoading}>
             {model.documents.length === 0 ? (
               <p className="empty-state">
-                {model.isDocumentsLoading ? "Loading member documents." : "Saved sources will appear here."}
+                {model.isDocumentsLoading
+                  ? "Loading member documents."
+                  : "Saved sources will appear here."}
               </p>
             ) : (
               model.documents.map((document) => {
-                const isSelected = model.selectedDocumentIds.includes(document.id);
-                const isDeletingThisDocument = model.isDeleting && model.deleteDocumentId === document.id;
+                const isSelected = model.selectedDocumentIds.includes(
+                  document.id,
+                );
+                const isOpen = model.activeDocumentId === document.id;
+                const isDeletingThisDocument =
+                  model.isDeleting && model.deleteDocumentId === document.id;
 
                 return (
-                  <article className={`document-row ${isSelected ? "selected" : ""}`} key={document.id}>
+                  <article
+                    className={`document-row ${isSelected ? "selected" : ""} ${isOpen ? "open" : ""}`}
+                    key={document.id}
+                  >
                     <label>
                       <input
                         checked={isSelected}
@@ -354,18 +448,32 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                       <span>
                         <strong>{document.originalFileName}</strong>
                         <small>
-                          {formatBytes(document.byteSize)} / {document.chunkCount} chunks
+                          {formatBytes(document.byteSize)} /{" "}
+                          {document.chunkCount} chunks
                         </small>
                       </span>
                     </label>
-                    <button
-                      type="button"
-                      className="ghost-button danger-button compact-button"
-                      disabled={isDeletingThisDocument}
-                      onClick={() => model.onDeleteDocument(document.id)}
-                    >
-                      {isDeletingThisDocument ? "Deleting" : "Delete"}
-                    </button>
+                    <div className="document-row-actions">
+                      <button
+                        type="button"
+                        className="ghost-button compact-button"
+                        aria-current={isOpen ? "true" : undefined}
+                        onClick={() => {
+                          model.onOpenDocument(document.id);
+                          showWorkspaceSection("notebook-chat");
+                        }}
+                      >
+                        {isOpen ? "Reading" : "View"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button danger-button compact-button"
+                        disabled={isDeletingThisDocument}
+                        onClick={() => model.onDeleteDocument(document.id)}
+                      >
+                        {isDeletingThisDocument ? "Deleting" : "Delete"}
+                      </button>
+                    </div>
                   </article>
                 );
               })
@@ -380,79 +488,124 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         >
           <div className="panel-heading">
             <div>
-              <p>{model.conversationId ?? model.activeNotebook?.category ?? "New thread"}</p>
-              <h2>Chat</h2>
+              <p>
+                {isViewingDocument
+                  ? (model.activeDocument?.originalFileName ?? "Opening source")
+                  : (model.conversationId ??
+                    model.activeNotebook?.category ??
+                    "New thread")}
+              </p>
+              <h2>{isViewingDocument ? "Document" : "Chat"}</h2>
             </div>
-            <button type="button" className="ghost-button compact-button" onClick={model.onNewThread}>
-              New thread
-            </button>
-          </div>
-
-          <div className="message-list" aria-live="polite">
-            {model.messages.length === 0 ? (
-              <div className="empty-state tall-empty notebook-empty-workspace">
-                <strong>Create a clinical overview from your sources</strong>
-                <span>Upload member records, labs, reports, or notes to start a Fountain Life notebook.</span>
-                <div className="drop-zone-preview">
-                  <p>or drop your files</p>
-                  <small>PDF, TXT, Markdown</small>
-                  <label>
-                    <input
-                      accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
-                      multiple
-                      type="file"
-                      onChange={(event) => {
-                        model.onUploadFiles(event.currentTarget.files);
-                        event.currentTarget.value = "";
-                      }}
-                    />
-                    <span>Upload files</span>
-                  </label>
-                </div>
-              </div>
-            ) : (
-              model.messages.map((message, index) => (
-                <article
-                  className={`chat-message chat-message-${message.role}`}
-                  key={`${message.messageId ?? message.conversationId}-${index}`}
+            <div className="panel-heading-actions">
+              {isViewingDocument ? (
+                <button
+                  type="button"
+                  className="ghost-button compact-button"
+                  onClick={model.onShowChat}
                 >
-                  <span>{message.role}</span>
-                  <p>{message.text}</p>
-                  {message.citations?.length ? (
-                    <ol className="citation-list">
-                      {message.citations.map((citation, citationIndex) => (
-                        <li key={`${citation.documentId}-${citation.chunkIndex}-${citationIndex}`}>
-                          <strong>
-                            [{citationIndex + 1}] {citation.documentName}
-                          </strong>
-                          <p>{citation.snippet}</p>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : null}
-                </article>
-              ))
-            )}
+                  Chat
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="ghost-button compact-button"
+                onClick={model.onNewThread}
+              >
+                New thread
+              </button>
+            </div>
           </div>
 
-          {model.statusText ? <p className="status-line">{model.statusText}</p> : null}
-          {model.operationError ? <p className="inline-error">{model.operationError}</p> : null}
+          {isViewingDocument ? (
+            <DocumentReader model={model} />
+          ) : (
+            <div className="message-list" aria-live="polite">
+              {model.messages.length === 0 ? (
+                <div className="empty-state tall-empty notebook-empty-workspace">
+                  <strong>Create a clinical overview from your sources</strong>
+                  <span>
+                    Upload member records, labs, reports, or notes to start a
+                    Fountain Life notebook.
+                  </span>
+                  <div className="drop-zone-preview">
+                    <p>or drop your files</p>
+                    <small>PDF, TXT, Markdown</small>
+                    <label>
+                      <input
+                        accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+                        multiple
+                        type="file"
+                        onChange={(event) => {
+                          model.onUploadFiles(event.currentTarget.files);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                      <span>Upload files</span>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                model.messages.map((message, index) => (
+                  <article
+                    className={`chat-message chat-message-${message.role}`}
+                    key={`${message.messageId ?? message.conversationId}-${index}`}
+                  >
+                    <span>{message.role}</span>
+                    <p>{message.text}</p>
+                    {message.citations?.length ? (
+                      <ol className="citation-list">
+                        {message.citations.map((citation, citationIndex) => (
+                          <li
+                            key={`${citation.documentId}-${citation.chunkIndex}-${citationIndex}`}
+                          >
+                            <button
+                              type="button"
+                              className="citation-source-button"
+                              onClick={() => {
+                                model.onOpenDocument(citation.documentId);
+                                showWorkspaceSection("notebook-chat");
+                              }}
+                            >
+                              [{citationIndex + 1}] {citation.documentName}
+                            </button>
+                            <p>{citation.snippet}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : null}
+                  </article>
+                ))
+              )}
+            </div>
+          )}
 
-          <form className="question-box" onSubmit={submitQuestion}>
-            <textarea
-              value={model.question}
-              placeholder={
-                selectedCount > 0
-                  ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
-                  : "Ask Zori across all uploaded documents"
-              }
-              rows={3}
-              onChange={(event) => model.onQuestionChange(event.currentTarget.value)}
-            />
-            <button type="submit" disabled={!canAsk}>
-              {model.isAsking ? "Answering" : "Ask"}
-            </button>
-          </form>
+          {model.statusText ? (
+            <p className="status-line">{model.statusText}</p>
+          ) : null}
+          {model.operationError ? (
+            <p className="inline-error">{model.operationError}</p>
+          ) : null}
+
+          {isViewingDocument ? null : (
+            <form className="question-box" onSubmit={submitQuestion}>
+              <textarea
+                value={model.question}
+                placeholder={
+                  selectedCount > 0
+                    ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
+                    : "Ask Zori across all uploaded documents"
+                }
+                rows={3}
+                onChange={(event) =>
+                  model.onQuestionChange(event.currentTarget.value)
+                }
+              />
+              <button type="submit" disabled={!canAsk}>
+                {model.isAsking ? "Answering" : "Ask"}
+              </button>
+            </form>
+          )}
         </section>
 
         <aside
@@ -479,10 +632,15 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
               </button>
             ))}
           </div>
-          {model.activeUnavailableFeature ? <UnavailableFeatureNotice model={model} /> : null}
+          {model.activeUnavailableFeature ? (
+            <UnavailableFeatureNotice model={model} />
+          ) : null}
           <div className="studio-empty">
             <strong>Studio output will be saved here.</strong>
-            <span>After adding sources, create overviews, study guides, and care-plan artifacts.</span>
+            <span>
+              After adding sources, create overviews, study guides, and
+              care-plan artifacts.
+            </span>
           </div>
           <button
             type="button"
@@ -497,9 +655,71 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   );
 }
 
-function UnavailableFeatureNotice({ model }: { model: NotebookWorkspaceModel }) {
+function DocumentReader({ model }: { model: NotebookWorkspaceModel }) {
+  if (model.isDocumentLoading) {
+    return (
+      <p className="empty-state document-reader-empty">
+        Loading source document.
+      </p>
+    );
+  }
+
+  if (model.activeDocumentError) {
+    return <p className="inline-error">{model.activeDocumentError}</p>;
+  }
+
+  if (!model.activeDocument) {
+    return (
+      <p className="empty-state document-reader-empty">
+        Select a source to read its extracted text.
+      </p>
+    );
+  }
+
   return (
-    <section className="unavailable-feature-popover" role="status" aria-live="polite">
+    <article
+      className="document-reader"
+      aria-label={`Document reader for ${model.activeDocument.originalFileName}`}
+    >
+      <header className="document-reader-header">
+        <div>
+          <strong>{model.activeDocument.originalFileName}</strong>
+          <span>
+            {formatBytes(model.activeDocument.byteSize)} /{" "}
+            {model.activeDocument.chunkCount} chunks /{" "}
+            {model.activeDocument.contentType}
+          </span>
+        </div>
+      </header>
+      <div className="document-reader-body">
+        {model.activeDocument.chunks.length === 0 ? (
+          <p className="empty-state document-reader-empty">
+            No extracted text is available for this source.
+          </p>
+        ) : (
+          model.activeDocument.chunks.map((chunk) => (
+            <section className="document-reader-section" key={chunk.chunkIndex}>
+              <span>Section {chunk.chunkIndex + 1}</span>
+              <p>{chunk.text}</p>
+            </section>
+          ))
+        )}
+      </div>
+    </article>
+  );
+}
+
+function UnavailableFeatureNotice({
+  model,
+}: {
+  model: NotebookWorkspaceModel;
+}) {
+  return (
+    <section
+      className="unavailable-feature-popover"
+      role="status"
+      aria-live="polite"
+    >
       <div>
         <p>{model.activeUnavailableFeature}</p>
         <strong>Sorry. This feature is not implemented yet.</strong>
@@ -510,7 +730,11 @@ function UnavailableFeatureNotice({ model }: { model: NotebookWorkspaceModel }) 
           <li key={feature}>{feature}</li>
         ))}
       </ul>
-      <button type="button" className="ghost-button compact-button" onClick={model.onDismissUnavailableFeature}>
+      <button
+        type="button"
+        className="ghost-button compact-button"
+        onClick={model.onDismissUnavailableFeature}
+      >
         Close
       </button>
     </section>
@@ -525,13 +749,21 @@ function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
 
   return (
     <div className="notebook-editor-backdrop" role="presentation">
-      <form className="notebook-editor" aria-label="Edit notebook" onSubmit={submitNotebook}>
+      <form
+        className="notebook-editor"
+        aria-label="Edit notebook"
+        onSubmit={submitNotebook}
+      >
         <div className="panel-heading">
           <div>
             <p>Notebook settings</p>
             <h2>Rename notebook</h2>
           </div>
-          <button type="button" className="ghost-button compact-button" onClick={model.onCancelEditNotebook}>
+          <button
+            type="button"
+            className="ghost-button compact-button"
+            onClick={model.onCancelEditNotebook}
+          >
             Close
           </button>
         </div>
@@ -573,7 +805,11 @@ function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
           />
         </label>
         <div className="notebook-editor-actions">
-          <button type="button" className="ghost-button" onClick={model.onCancelEditNotebook}>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={model.onCancelEditNotebook}
+          >
             Cancel
           </button>
           <button type="submit">Save</button>
