@@ -1,4 +1,5 @@
-import type { FormEvent } from "react";
+import { useState } from "react";
+import type { FormEvent, MouseEvent } from "react";
 import type { NotebookSummary, NotebookWorkspaceModel } from "./notebook-workspace.model";
 import {
   filterNotebooks,
@@ -26,7 +27,7 @@ const WORKING_FEATURES = [
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
-    <main className="notebook-shell">
+    <main className={`notebook-shell ${model.isNotebookListVisible ? "notebook-shell-gallery" : "notebook-shell-detail"}`}>
       <div className="notebook-ribbon">AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care</div>
       <header className="notebook-topbar">
         <div className="brand-cluster" aria-label="Fountain Life Notebook">
@@ -197,6 +198,7 @@ function NotebookCard({
 }
 
 function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
+  const [activeWorkspaceSection, setActiveWorkspaceSection] = useState("notebook-sources");
   const selectedCount = model.selectedDocumentIds.length;
   const allDocumentsSelected = model.documents.length > 0 && selectedCount === model.documents.length;
   const canAsk =
@@ -207,6 +209,13 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     model.onAskQuestion();
+  }
+
+  function scrollToWorkspaceSection(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
+    event.preventDefault();
+    setActiveWorkspaceSection(sectionId);
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${sectionId}`);
   }
 
   return (
@@ -224,6 +233,33 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           + Create notebook
         </button>
       </section>
+
+      <nav className="mobile-workspace-tabs" aria-label="Notebook workspace sections">
+        <a
+          aria-current={activeWorkspaceSection === "notebook-sources" ? "page" : undefined}
+          className={activeWorkspaceSection === "notebook-sources" ? "active" : undefined}
+          href="#notebook-sources"
+          onClick={(event) => scrollToWorkspaceSection(event, "notebook-sources")}
+        >
+          Sources
+        </a>
+        <a
+          aria-current={activeWorkspaceSection === "notebook-chat" ? "page" : undefined}
+          className={activeWorkspaceSection === "notebook-chat" ? "active" : undefined}
+          href="#notebook-chat"
+          onClick={(event) => scrollToWorkspaceSection(event, "notebook-chat")}
+        >
+          Chat
+        </a>
+        <a
+          aria-current={activeWorkspaceSection === "notebook-studio" ? "page" : undefined}
+          className={activeWorkspaceSection === "notebook-studio" ? "active" : undefined}
+          href="#notebook-studio"
+          onClick={(event) => scrollToWorkspaceSection(event, "notebook-studio")}
+        >
+          Studio
+        </a>
+      </nav>
 
       <section className="insight-strip" aria-label="Notebook status overview">
         <div>
@@ -245,7 +281,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
       </section>
 
       <section className="notebook-layout" aria-label="Notebook workspace">
-        <aside className="document-panel" aria-label="Document library">
+        <aside className="document-panel" id="notebook-sources" aria-label="Document library">
           <div className="panel-heading">
             <div>
               <p>Sources</p>
@@ -333,7 +369,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           </div>
         </aside>
 
-        <section className="chat-panel" aria-label="Notebook chat">
+        <section className="chat-panel" id="notebook-chat" aria-label="Notebook chat">
           <div className="panel-heading">
             <div>
               <p>{model.conversationId ?? model.activeNotebook?.category ?? "New thread"}</p>
@@ -411,7 +447,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           </form>
         </section>
 
-        <aside className="studio-panel" aria-label="Notebook studio">
+        <aside className="studio-panel" id="notebook-studio" aria-label="Notebook studio">
           <div className="panel-heading">
             <div>
               <p>Studio</p>
