@@ -10,6 +10,7 @@ import {
   formatNotebookDate,
   orderNotebooksByMostRecent,
 } from "./notebook-workspace.vm";
+import { StepAwayFlow } from "./step-away-flow";
 
 const STUDIO_ACTIONS = [
   "Audio Overview",
@@ -166,6 +167,7 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
           ) : null}
         </div>
       </section>
+      <StepAwayFlow className="gallery-step-away" />
     </>
   );
 }
@@ -471,6 +473,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
               })
             )}
           </div>
+          <StepAwayFlow className="document-step-away" />
         </aside>
 
         <section
