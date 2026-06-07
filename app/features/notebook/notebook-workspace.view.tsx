@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import packageMetadata from "../../../package.json";
 import type {
   NotebookSummary,
   NotebookWorkspaceModel,
@@ -27,6 +28,8 @@ const WORKING_FEATURES = [
   "Create, rename, duplicate, and delete notebooks.",
   "Start a fresh chat thread inside a notebook.",
 ];
+
+const APP_VERSION = `v${packageMetadata.version}`;
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (
@@ -87,6 +90,10 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
       ) : (
         <NotebookDetail model={model} />
       )}
+      <footer className="notebook-footer" aria-label="Application version">
+        <span>Fountain Life Notebook {APP_VERSION}</span>
+        <span>&copy; 2026 Fountain Life</span>
+      </footer>
       {model.editingNotebook ? <NotebookEditor model={model} /> : null}
     </main>
   );
