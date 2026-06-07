@@ -29,6 +29,23 @@ Run from this repo root:
 
 1. `npm run verify`
 
+## Version Bumps
+
+The visible app version is sourced from `package.json`.
+
+Known version metadata files:
+
+- `package.json`
+- `package-lock.json`
+
+Deterministic bump commands:
+
+- Patch: `npm run version:patch`
+- Minor: `npm run version:minor`
+- Major: `npm run version:major`
+
+Use a patch bump for normal fixes and polish, a minor bump for user-visible feature milestones, and a major bump only for intentional compatibility-breaking changes. During `finalize` or `quick ship`, run the selected bump command only after checks/review, then verify the diff is limited to the known version metadata files unless the current task already changed source files.
+
 ## Architecture Rules
 
 - Components render and coordinate UI state; services own auth, generated API usage, and streaming behavior.

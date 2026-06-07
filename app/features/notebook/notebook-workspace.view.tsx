@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import packageMetadata from "../../../package.json";
 import type { NotebookSummary, NotebookWorkspaceModel } from "./notebook-workspace.model";
 import {
   filterNotebooks,
@@ -25,7 +26,7 @@ const WORKING_FEATURES = [
   "Start a fresh chat thread inside a notebook.",
 ];
 
-const APP_VERSION = "v0.3.0";
+const APP_VERSION = `v${packageMetadata.version}`;
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   return (

@@ -1,6 +1,7 @@
 {
   "name": "jacobi-solutions.fountain-life-notebook.frontend",
   "private": true,
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "build": "react-router build",
@@ -11,7 +12,10 @@
     "start": "vite preview --host 0.0.0.0 --outDir build/client",
     "test": "vitest run",
     "typecheck": "react-router typegen && tsc",
-    "verify": "scripts/verify.sh"
+    "verify": "scripts/verify.sh",
+    "version:major": "npm version major --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:patch": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
