@@ -3,11 +3,183 @@ import type {
   SendAssistantMessageRequest,
 } from "../../services/assistant-service";
 import type { DocumentSummary } from "../../services/documents-service";
+import type {
+  NotebookEditorDraft,
+  NotebookSummary,
+  NotebookTone,
+} from "./notebook-workspace.model";
 
 export interface NotebookQuestionInput {
   conversationId?: string;
   question: string;
   selectedDocumentIds: string[];
+}
+
+export interface NotebookSessionState {
+  conversationId?: string;
+  messages: AssistantThreadUpdate[];
+  question: string;
+  selectedDocumentIds: string[];
+  statusText?: string;
+}
+
+export const INITIAL_NOTEBOOKS: NotebookSummary[] = [
+  {
+    category: "Diagnostics",
+    createdDateUtc: "2026-06-06T12:00:00.000Z",
+    description: "Longitudinal labs, imaging notes, and prioritized risk signals.",
+    featured: true,
+    id: "healthspan-diagnostics",
+    title: "Healthspan Diagnostics",
+    tone: "aqua",
+  },
+  {
+    category: "Care plan",
+    createdDateUtc: "2026-06-04T12:00:00.000Z",
+    description: "Therapeutic actions, follow-ups, and member-facing next steps.",
+    featured: true,
+    id: "care-plan-builder",
+    title: "Care Plan Builder",
+    tone: "gold",
+  },
+  {
+    category: "Clinical brief",
+    createdDateUtc: "2026-05-28T12:00:00.000Z",
+    description: "Physician-ready summary for consult prep and ongoing review.",
+    featured: true,
+    id: "physician-briefing",
+    title: "Physician Briefing",
+    tone: "graphite",
+  },
+];
+
+const NOTEBOOK_TONES: NotebookTone[] = ["aqua", "gold", "graphite", "violet"];
+
+export function createEmptyNotebookSession(): NotebookSessionState {
+  return {
+    messages: [],
+    question: "",
+    selectedDocumentIds: [],
+  };
+}
+
+export function createNotebookSessionMap(notebooks: NotebookSummary[]) {
+  return Object.fromEntries(
+    notebooks.map((notebook) => [notebook.id, createEmptyNotebookSession()]),
+  ) as Record<string, NotebookSessionState>;
+}
+
+export function createNotebookSummary(count: number, createdDateUtc: string): NotebookSummary {
+  return {
+    category: "New workspace",
+    createdDateUtc,
+    description: "A focused workspace for sources, questions, citations, and Zori insights.",
+    featured: false,
+    id: `member-notebook-${createdDateUtc.replace(/\W/g, "-")}`,
+    title: "Untitled notebook",
+    tone: NOTEBOOK_TONES[count % NOTEBOOK_TONES.length],
+  };
+}
+
+export function createNotebookEditorDraft(notebook?: NotebookSummary): NotebookEditorDraft {
+  return {
+    category: notebook?.category ?? "Member notebook",
+    description:
+      notebook?.description ??
+      "A focused workspace for sources, questions, citations, and Zori insights.",
+    title: notebook?.title ?? "",
+  };
+}
+
+export function updateNotebookFromDraft(
+  notebook: NotebookSummary,
+  draft: NotebookEditorDraft,
+): NotebookSummary {
+  const title = draft.title.trim();
+
+  return {
+    ...notebook,
+    category: draft.category.trim() || "Member notebook",
+    description:
+      draft.description.trim() ||
+      "A focused workspace for sources, questions, citations, and Zori insights.",
+    title: title || notebook.title,
+  };
+}
+
+export function duplicateNotebookSummary(
+  notebook: NotebookSummary,
+  count: number,
+  createdDateUtc: string,
+): NotebookSummary {
+  return {
+    ...notebook,
+    createdDateUtc,
+    featured: false,
+    id: `member-notebook-${createdDateUtc.replace(/\W/g, "-")}`,
+    title: `${notebook.title} Copy`,
+    tone: NOTEBOOK_TONES[count % NOTEBOOK_TONES.length],
+  };
+}
+
+export function shouldAutoNameNotebook(notebook?: NotebookSummary) {
+  return !notebook || /^untitled notebook/i.test(notebook.title.trim());
+}
+
+export function inferNotebookTitleFromPrompt(prompt: string) {
+  const words = prompt
+    .replace(/[^\w\s-]/g, " ")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length > 2)
+    .filter((word) => !COMMON_TITLE_WORDS.has(word.toLocaleLowerCase()))
+    .slice(0, 5);
+
+  if (words.length === 0) {
+    return "Member Intelligence Brief";
+  }
+
+  return words
+    .map((word) => word.charAt(0).toLocaleUpperCase() + word.slice(1).toLocaleLowerCase())
+    .join(" ");
+}
+
+export function filterNotebooks(notebooks: NotebookSummary[], query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery) {
+    return notebooks;
+  }
+
+  return notebooks.filter((notebook) =>
+    [notebook.title, notebook.category, notebook.description]
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(normalizedQuery),
+  );
+}
+
+export function orderNotebooksByMostRecent(notebooks: NotebookSummary[]) {
+  return [...notebooks].sort(
+    (first, second) =>
+      new Date(second.createdDateUtc).getTime() - new Date(first.createdDateUtc).getTime(),
+  );
+}
+
+export function formatNotebookDate(createdDateUtc: string) {
+  const createdDate = new Date(createdDateUtc);
+  if (Number.isNaN(createdDate.getTime())) {
+    return "Unknown date";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(createdDate);
+}
+
+export function getNotebookSourceCount(session: NotebookSessionState, totalDocumentCount: number) {
+  return session.selectedDocumentIds.length || totalDocumentCount;
 }
 
 export function normalizeSelectedDocumentIds(
@@ -76,3 +248,34 @@ function uniqueDocumentIds(documentIds: string[]) {
     new Set(documentIds.map((documentId) => documentId.trim()).filter(Boolean)),
   );
 }
+
+const COMMON_TITLE_WORDS = new Set([
+  "about",
+  "across",
+  "after",
+  "analysis",
+  "analyze",
+  "brief",
+  "build",
+  "create",
+  "document",
+  "documents",
+  "does",
+  "from",
+  "give",
+  "health",
+  "member",
+  "notebook",
+  "please",
+  "question",
+  "review",
+  "show",
+  "summarize",
+  "tell",
+  "that",
+  "the",
+  "this",
+  "what",
+  "with",
+  "zori",
+]);

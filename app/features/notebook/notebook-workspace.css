@@ -165,6 +165,7 @@
   font-size: clamp(2.8rem, 7.5vw, 6.25rem);
   font-weight: 360;
   line-height: 0.93;
+  overflow-wrap: anywhere;
 }
 
 .notebook-topbar h1 em {
@@ -198,6 +199,246 @@
   border-color: rgba(134, 215, 242, 0.7);
   color: #ffffff;
   background: rgba(134, 215, 242, 0.16);
+}
+
+.notebook-gallery-toolbar,
+.notebook-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  max-width: 1220px;
+  margin: 0 auto 1rem;
+}
+
+.notebook-gallery-toolbar {
+  align-items: stretch;
+}
+
+.notebook-search {
+  position: relative;
+  display: block;
+  width: min(100%, 30rem);
+}
+
+.notebook-search span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.notebook-search input,
+.notebook-editor input {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 0 1rem;
+  color: #ffffff;
+  background: rgba(5, 7, 11, 0.68);
+}
+
+.notebook-card-section {
+  max-width: 1220px;
+  margin: 0 auto clamp(1.35rem, 3vw, 2.25rem);
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 420;
+}
+
+.notebook-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.95rem;
+}
+
+.notebook-card,
+.create-notebook-card {
+  min-width: 0;
+  min-height: 14.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(10, 15, 22, 0.78);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.23);
+  overflow: hidden;
+}
+
+.notebook-card {
+  position: relative;
+}
+
+.create-notebook-card {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  color: #ffffff;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(134, 215, 242, 0.1), rgba(214, 180, 103, 0.08)),
+    rgba(255, 255, 255, 0.035);
+}
+
+.create-notebook-card span {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border-radius: 999px;
+  color: #061019;
+  background: var(--fl-aqua);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.notebook-card-open {
+  display: grid;
+  align-content: end;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 11.8rem;
+  border: 0;
+  border-radius: 0;
+  padding: 1rem;
+  color: #ffffff;
+  text-align: left;
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.76)),
+    radial-gradient(circle at 22% 14%, rgba(134, 215, 242, 0.34), transparent 9rem),
+    rgba(10, 15, 22, 0.9);
+}
+
+.notebook-card-gold .notebook-card-open {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.03), rgba(5, 7, 11, 0.78)),
+    radial-gradient(circle at 24% 18%, rgba(214, 180, 103, 0.4), transparent 9rem),
+    rgba(19, 17, 11, 0.92);
+}
+
+.notebook-card-graphite .notebook-card-open {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.78)),
+    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.2), transparent 9rem),
+    rgba(18, 22, 28, 0.94);
+}
+
+.notebook-card-violet .notebook-card-open {
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.02), rgba(5, 7, 11, 0.78)),
+    radial-gradient(circle at 24% 18%, rgba(174, 148, 216, 0.32), transparent 9rem),
+    rgba(20, 16, 27, 0.94);
+}
+
+.notebook-card-open:hover:not(:disabled) {
+  transform: none;
+}
+
+.notebook-card-icon {
+  display: block;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 0.42rem solid #ffffff;
+  border-top-color: var(--fl-aqua);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.22rem rgba(5, 7, 11, 0.84);
+}
+
+.notebook-card-category,
+.notebook-card-meta {
+  color: rgba(247, 247, 242, 0.72);
+  font-size: 0.82rem;
+}
+
+.notebook-card-open strong {
+  color: #ffffff;
+  font-size: clamp(1.25rem, 2.7vw, 1.85rem);
+  font-weight: 520;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.notebook-card-open small {
+  color: rgba(247, 247, 242, 0.78);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.notebook-card-menu {
+  position: absolute;
+  right: 0.65rem;
+  top: 0.65rem;
+  z-index: 2;
+}
+
+.notebook-card-menu summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(5, 7, 11, 0.46);
+  cursor: pointer;
+  list-style: none;
+}
+
+.notebook-card-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.notebook-card-menu summary span {
+  display: block;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.notebook-card-menu-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  display: grid;
+  gap: 0.25rem;
+  min-width: 10rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.35rem;
+  background: rgba(10, 15, 22, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+.notebook-card-menu-popover button {
+  justify-content: start;
+  min-height: 2.2rem;
+  border-radius: 6px;
+  padding: 0 0.7rem;
+  color: #ffffff;
+  text-align: left;
+  background: transparent;
+}
+
+.notebook-card-menu-popover button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: none;
 }
 
 .insight-strip {
@@ -235,14 +476,15 @@
 
 .notebook-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.72fr);
+  grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.58fr) minmax(240px, 0.72fr);
   gap: 1rem;
   max-width: 1220px;
   margin: 0 auto;
 }
 
 .document-panel,
-.chat-panel {
+.chat-panel,
+.studio-panel {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 8px;
@@ -255,6 +497,13 @@
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 14rem);
+  padding: 1rem;
+}
+
+.studio-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 14rem);
   padding: 1rem;
 }
 
@@ -309,6 +558,7 @@
 .compact-button {
   min-height: 2rem;
   padding: 0 0.75rem;
+  white-space: nowrap;
 }
 
 .danger-button {
@@ -352,6 +602,34 @@
 .upload-target small {
   margin-top: 0.2rem;
   font-size: 0.78rem;
+}
+
+.source-search-shell {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  padding: 0.85rem;
+  background: rgba(5, 7, 11, 0.44);
+}
+
+.source-search-shell span {
+  color: rgba(247, 247, 242, 0.62);
+}
+
+.source-search-shell div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.source-search-shell small {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .document-list {
@@ -519,6 +797,148 @@
   max-width: 32rem;
 }
 
+.notebook-empty-workspace {
+  gap: 1rem;
+  padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+.drop-zone-preview {
+  display: grid;
+  width: min(100%, 42rem);
+  min-height: 12rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.6rem;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(5, 7, 11, 0.38);
+}
+
+.drop-zone-preview p {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+}
+
+.drop-zone-preview label {
+  position: relative;
+  display: inline-grid;
+  min-height: 2.4rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  margin-top: 0.45rem;
+  padding: 0 1rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+}
+
+.drop-zone-preview input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.studio-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  justify-content: start;
+  min-height: 4.2rem;
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #ffffff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.studio-action:nth-child(2n) {
+  background: rgba(214, 180, 103, 0.12);
+}
+
+.studio-action:nth-child(3n) {
+  background: rgba(134, 215, 242, 0.1);
+}
+
+.studio-action span {
+  width: 0.68rem;
+  height: 0.68rem;
+  border-radius: 999px;
+  background: var(--fl-aqua);
+}
+
+.studio-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.45rem;
+  min-height: 12rem;
+  margin-top: auto;
+  color: rgba(247, 247, 242, 0.66);
+  text-align: center;
+}
+
+.studio-empty strong {
+  color: #ffffff;
+}
+
+.studio-note-button {
+  align-self: center;
+  margin-top: 1rem;
+}
+
+.notebook-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(5, 7, 11, 0.68);
+  z-index: 20;
+}
+
+.notebook-editor {
+  display: grid;
+  gap: 0.85rem;
+  width: min(100%, 34rem);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgba(10, 15, 22, 0.96);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+}
+
+.notebook-editor label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.notebook-editor label span {
+  color: rgba(247, 247, 242, 0.72);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.notebook-editor input {
+  border-radius: 8px;
+}
+
+.notebook-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
 @media (max-width: 920px) {
   .notebook-topbar {
     display: grid;
@@ -527,6 +947,16 @@
 
   .notebook-session {
     justify-content: flex-start;
+  }
+
+  .notebook-gallery-toolbar,
+  .notebook-actionbar {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .notebook-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .insight-strip {
@@ -538,7 +968,8 @@
   }
 
   .document-panel,
-  .chat-panel {
+  .chat-panel,
+  .studio-panel {
     max-height: none;
     min-height: 0;
   }
@@ -554,6 +985,11 @@
   }
 
   .insight-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .notebook-card-grid,
+  .studio-grid {
     grid-template-columns: 1fr;
   }
 

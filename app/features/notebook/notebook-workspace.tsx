@@ -1,21 +1,32 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
-import type { AssistantThreadUpdate } from "../../services/assistant-service";
 import {
   DOCUMENTS_QUERY_KEY,
   DOCUMENT_UPLOAD_ERROR_MESSAGE,
   NOTEBOOK_ASSISTANT_KEY,
 } from "./notebook.constants";
+import type { NotebookEditorDraft } from "./notebook-workspace.model";
 import { NotebookWorkspaceView } from "./notebook-workspace.view";
 import {
   addSelectedDocumentId,
   appendThreadUpdate,
+  createEmptyNotebookSession,
+  createNotebookEditorDraft,
+  createNotebookSessionMap,
   createNotebookQuestionRequest,
+  createNotebookSummary,
+  duplicateNotebookSummary,
+  getNotebookSourceCount,
+  inferNotebookTitleFromPrompt,
+  INITIAL_NOTEBOOKS,
   normalizeSelectedDocumentIds,
+  shouldAutoNameNotebook,
   toErrorMessage,
   toggleDocumentSelection,
   toggleEveryDocumentSelection,
+  updateNotebookFromDraft,
+  type NotebookSessionState,
 } from "./notebook-workspace.vm";
 import "./notebook-workspace.css";
 
@@ -23,12 +34,17 @@ export function NotebookWorkspace() {
   const { assistant, auth, documents } = useServices();
   const authState = useAuth();
   const queryClient = useQueryClient();
-  const [conversationId, setConversationId] = useState<string>();
-  const [messages, setMessages] = useState<AssistantThreadUpdate[]>([]);
-  const [question, setQuestion] = useState("");
-  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
-  const [statusText, setStatusText] = useState<string>();
+  const [activeNotebookId, setActiveNotebookId] = useState<string>();
   const [deleteDocumentId, setDeleteDocumentId] = useState<string>();
+  const [editingNotebookId, setEditingNotebookId] = useState<string>();
+  const [notebookDraft, setNotebookDraft] = useState<NotebookEditorDraft>(() =>
+    createNotebookEditorDraft(),
+  );
+  const [notebookSearch, setNotebookSearch] = useState("");
+  const [notebooks, setNotebooks] = useState(INITIAL_NOTEBOOKS);
+  const [notebookSessions, setNotebookSessions] = useState(() =>
+    createNotebookSessionMap(INITIAL_NOTEBOOKS),
+  );
   const [uploadBatchError, setUploadBatchError] = useState<string>();
 
   const documentsQuery = useQuery({
@@ -42,7 +58,11 @@ export function NotebookWorkspace() {
     onMutate: () => setUploadBatchError(undefined),
     onError: (error) => setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE)),
     onSuccess: async (document) => {
-      setSelectedDocumentIds((current) => addSelectedDocumentId(current, document.id));
+      if (activeNotebookId) {
+        updateNotebookSession(activeNotebookId, (current) => ({
+          selectedDocumentIds: addSelectedDocumentId(current.selectedDocumentIds, document.id),
+        }));
+      }
       await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
     },
   });
@@ -52,43 +72,84 @@ export function NotebookWorkspace() {
     onMutate: (documentId) => setDeleteDocumentId(documentId),
     onSettled: () => setDeleteDocumentId(undefined),
     onSuccess: async (_result, documentId) => {
-      setSelectedDocumentIds((current) => current.filter((selectedId) => selectedId !== documentId));
+      setNotebookSessions((current) =>
+        Object.fromEntries(
+          Object.entries(current).map(([notebookId, session]) => [
+            notebookId,
+            {
+              ...session,
+              selectedDocumentIds: session.selectedDocumentIds.filter(
+                (selectedId) => selectedId !== documentId,
+              ),
+            },
+          ]),
+        ),
+      );
       await queryClient.invalidateQueries({ queryKey: DOCUMENTS_QUERY_KEY });
     },
   });
 
   const askMutation = useMutation({
     mutationFn: async () => {
+      const notebookId = activeNotebookId;
+      if (!notebookId) {
+        return;
+      }
+
       const request = createNotebookQuestionRequest({
-        conversationId,
-        question,
+        conversationId: activeNotebookSession.conversationId,
+        question: activeNotebookSession.question,
         selectedDocumentIds: normalizedSelectedDocumentIds,
       });
       if (!request) {
         return;
       }
 
-      setStatusText(undefined);
+      const activeNotebookForRequest = notebooks.find((notebook) => notebook.id === notebookId);
+      if (shouldAutoNameNotebook(activeNotebookForRequest)) {
+        renameNotebook(notebookId, inferNotebookTitleFromPrompt(request.message));
+      }
+
+      updateNotebookSession(notebookId, () => ({ statusText: undefined }));
       await assistant.streamMessage(
         NOTEBOOK_ASSISTANT_KEY,
         request,
         (update) => {
-          setConversationId(update.conversationId);
+          updateNotebookSession(notebookId, (current) => ({
+            conversationId: update.conversationId,
+            messages: appendThreadUpdate(current.messages, update),
+            statusText: update.type === "status" ? update.text : undefined,
+          }));
           if (update.type === "status") {
-            setStatusText(update.text);
             return;
           }
-
-          setStatusText(undefined);
-          setMessages((current) => appendThreadUpdate(current, update));
         },
       );
-      setQuestion("");
+      updateNotebookSession(notebookId, () => ({ question: "" }));
     },
   });
 
   const currentDocuments = documentsQuery.data ?? [];
-  const normalizedSelectedDocumentIds = normalizeSelectedDocumentIds(selectedDocumentIds, currentDocuments);
+  const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId);
+  const activeNotebookSession = activeNotebookId
+    ? (notebookSessions[activeNotebookId] ?? createEmptyNotebookSession())
+    : createEmptyNotebookSession();
+  const normalizedSelectedDocumentIds = normalizeSelectedDocumentIds(
+    activeNotebookSession.selectedDocumentIds,
+    currentDocuments,
+  );
+  const sourceCountsByNotebookId = Object.fromEntries(
+    notebooks.map((notebook) => [
+      notebook.id,
+      getNotebookSourceCount(notebookSessions[notebook.id] ?? createEmptyNotebookSession(), currentDocuments.length),
+    ]),
+  );
+  const insightCountsByNotebookId = Object.fromEntries(
+    notebooks.map((notebook) => [
+      notebook.id,
+      (notebookSessions[notebook.id] ?? createEmptyNotebookSession()).messages.length,
+    ]),
+  );
 
   function handleUploadFiles(files: FileList | null) {
     if (!files || files.length === 0) {
@@ -108,36 +169,186 @@ export function NotebookWorkspace() {
     }
   }
 
+  function updateNotebookSession(
+    notebookId: string,
+    update: (current: NotebookSessionState) => Partial<NotebookSessionState>,
+  ) {
+    setNotebookSessions((current) => {
+      const currentSession = current[notebookId] ?? createEmptyNotebookSession();
+
+      return {
+        ...current,
+        [notebookId]: {
+          ...currentSession,
+          ...update(currentSession),
+        },
+      };
+    });
+  }
+
   function toggleDocument(documentId: string) {
-    setSelectedDocumentIds((current) => toggleDocumentSelection(current, documentId));
+    if (!activeNotebookId) {
+      return;
+    }
+
+    updateNotebookSession(activeNotebookId, (current) => ({
+      selectedDocumentIds: toggleDocumentSelection(current.selectedDocumentIds, documentId),
+    }));
   }
 
   function toggleEveryDocument() {
-    setSelectedDocumentIds((current) => toggleEveryDocumentSelection(current, currentDocuments));
+    if (!activeNotebookId) {
+      return;
+    }
+
+    updateNotebookSession(activeNotebookId, (current) => ({
+      selectedDocumentIds: toggleEveryDocumentSelection(current.selectedDocumentIds, currentDocuments),
+    }));
   }
 
   function startNewThread() {
-    setConversationId(undefined);
-    setMessages([]);
-    setStatusText(undefined);
+    if (!activeNotebookId) {
+      return;
+    }
+
+    updateNotebookSession(activeNotebookId, () => ({
+      conversationId: undefined,
+      messages: [],
+      statusText: undefined,
+    }));
+  }
+
+  function changeQuestion(question: string) {
+    if (!activeNotebookId) {
+      return;
+    }
+
+    updateNotebookSession(activeNotebookId, () => ({ question }));
+  }
+
+  function createNotebook() {
+    const notebook = createNotebookSummary(notebooks.length, new Date().toISOString());
+    setNotebooks((current) => [...current, notebook]);
+    setNotebookSessions((current) => ({
+      ...current,
+      [notebook.id]: createEmptyNotebookSession(),
+    }));
+    setActiveNotebookId(notebook.id);
+    setNotebookSearch("");
+  }
+
+  function editNotebook(notebookId: string) {
+    const notebook = notebooks.find((candidate) => candidate.id === notebookId);
+    if (!notebook) {
+      return;
+    }
+
+    setEditingNotebookId(notebookId);
+    setNotebookDraft(createNotebookEditorDraft(notebook));
+  }
+
+  function saveNotebook() {
+    if (!editingNotebookId) {
+      return;
+    }
+
+    setNotebooks((current) =>
+      current.map((notebook) =>
+        notebook.id === editingNotebookId ? updateNotebookFromDraft(notebook, notebookDraft) : notebook,
+      ),
+    );
+    setEditingNotebookId(undefined);
+    setNotebookDraft(createNotebookEditorDraft());
+  }
+
+  function duplicateNotebook(notebookId: string) {
+    const notebook = notebooks.find((candidate) => candidate.id === notebookId);
+    if (!notebook) {
+      return;
+    }
+
+    const duplicatedNotebook = duplicateNotebookSummary(
+      notebook,
+      notebooks.length,
+      new Date().toISOString(),
+    );
+    setNotebooks((current) => [...current, duplicatedNotebook]);
+    setNotebookSessions((current) => ({
+      ...current,
+      [duplicatedNotebook.id]: {
+        ...(current[notebookId] ?? createEmptyNotebookSession()),
+        conversationId: undefined,
+        messages: [],
+        statusText: undefined,
+      },
+    }));
+    setActiveNotebookId(duplicatedNotebook.id);
+    setNotebookSearch("");
+  }
+
+  function deleteNotebook(notebookId: string) {
+    setNotebooks((current) => current.filter((notebook) => notebook.id !== notebookId));
+    setNotebookSessions((current) => {
+      const next = { ...current };
+      delete next[notebookId];
+      return next;
+    });
+    if (activeNotebookId === notebookId) {
+      setActiveNotebookId(undefined);
+    }
+    if (editingNotebookId === notebookId) {
+      setEditingNotebookId(undefined);
+      setNotebookDraft(createNotebookEditorDraft());
+    }
+  }
+
+  function renameNotebook(notebookId: string, title: string) {
+    setNotebooks((current) =>
+      current.map((notebook) =>
+        notebook.id === notebookId
+          ? {
+              ...notebook,
+              category: notebook.category === "New workspace" ? "Member notebook" : notebook.category,
+              title,
+            }
+          : notebook,
+      ),
+    );
   }
 
   return (
     <NotebookWorkspaceView
+      activeNotebook={activeNotebook}
       authState={authState}
-      conversationId={conversationId}
+      conversationId={activeNotebookSession.conversationId}
       deleteDocumentId={deleteDocumentId}
       documents={currentDocuments}
       documentsError={toErrorMessage(documentsQuery.error)}
+      editingNotebook={notebooks.find((notebook) => notebook.id === editingNotebookId)}
+      insightCountsByNotebookId={insightCountsByNotebookId}
       isAsking={askMutation.isPending}
       isDeleting={deleteMutation.isPending}
       isDocumentsLoading={documentsQuery.isLoading}
+      isNotebookListVisible={!activeNotebookId}
       isUploading={uploadMutation.isPending}
-      messages={messages}
+      messages={activeNotebookSession.messages}
       onAskQuestion={() => askMutation.mutate()}
+      onBackToNotebooks={() => setActiveNotebookId(undefined)}
+      onCancelEditNotebook={() => {
+        setEditingNotebookId(undefined);
+        setNotebookDraft(createNotebookEditorDraft());
+      }}
+      onCreateNotebook={createNotebook}
+      onDeleteNotebook={deleteNotebook}
       onDeleteDocument={(documentId) => deleteMutation.mutate(documentId)}
+      onDuplicateNotebook={duplicateNotebook}
+      onEditNotebook={editNotebook}
       onNewThread={startNewThread}
-      onQuestionChange={setQuestion}
+      onNotebookDraftChange={setNotebookDraft}
+      onNotebookSearchChange={setNotebookSearch}
+      onQuestionChange={changeQuestion}
+      onSaveNotebook={saveNotebook}
+      onSelectNotebook={setActiveNotebookId}
       onSignIn={() => void auth.signIn()}
       onSignOut={() => void auth.signOut()}
       onToggleDocument={toggleDocument}
@@ -146,9 +357,13 @@ export function NotebookWorkspace() {
       operationError={
         uploadBatchError ?? toErrorMessage(uploadMutation.error ?? deleteMutation.error ?? askMutation.error)
       }
-      question={question}
+      notebookDraft={notebookDraft}
+      notebookSearch={notebookSearch}
+      notebooks={notebooks}
+      question={activeNotebookSession.question}
       selectedDocumentIds={normalizedSelectedDocumentIds}
-      statusText={statusText}
+      sourceCountsByNotebookId={sourceCountsByNotebookId}
+      statusText={activeNotebookSession.statusText}
     />
   );
 }

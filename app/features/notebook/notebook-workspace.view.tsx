@@ -1,19 +1,12 @@
 import type { FormEvent } from "react";
-import type { NotebookWorkspaceModel } from "./notebook-workspace.model";
+import type { NotebookSummary, NotebookWorkspaceModel } from "./notebook-workspace.model";
+import {
+  filterNotebooks,
+  formatNotebookDate,
+  orderNotebooksByMostRecent,
+} from "./notebook-workspace.vm";
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
-  const selectedCount = model.selectedDocumentIds.length;
-  const allDocumentsSelected = model.documents.length > 0 && selectedCount === model.documents.length;
-  const canAsk =
-    model.authState.status === "authenticated" &&
-    model.question.trim().length > 0 &&
-    !model.isAsking;
-
-  function submitQuestion(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    model.onAskQuestion();
-  }
-
   return (
     <main className="notebook-shell">
       <div className="notebook-ribbon">AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care</div>
@@ -34,9 +27,13 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           </div>
           <div>
             <p className="notebook-eyebrow">Member intelligence notebook</p>
-            <h1>
-              Detect. Prevent. <em>Reverse.</em>
-            </h1>
+            {model.activeNotebook ? (
+              <h1>{model.activeNotebook.title}</h1>
+            ) : (
+              <h1>
+                Detect. Prevent. <em>Reverse.</em>
+              </h1>
+            )}
           </div>
         </div>
         <div className="notebook-session">
@@ -54,6 +51,161 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           )}
         </div>
       </header>
+
+      {model.isNotebookListVisible ? <NotebookGallery model={model} /> : <NotebookDetail model={model} />}
+      {model.editingNotebook ? <NotebookEditor model={model} /> : null}
+    </main>
+  );
+}
+
+function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
+  const visibleNotebooks = filterNotebooks(model.notebooks, model.notebookSearch);
+  const featuredNotebooks = visibleNotebooks.filter((notebook) => notebook.featured);
+  const recentNotebooks = orderNotebooksByMostRecent(visibleNotebooks);
+
+  return (
+    <>
+      <section className="notebook-gallery-toolbar" aria-label="Notebook controls">
+        <label className="notebook-search">
+          <span>Search notebooks</span>
+          <input
+            type="search"
+            value={model.notebookSearch}
+            placeholder="Search notebooks"
+            onChange={(event) => model.onNotebookSearchChange(event.currentTarget.value)}
+          />
+        </label>
+        <button type="button" onClick={model.onCreateNotebook}>
+          + Create notebook
+        </button>
+      </section>
+
+      {featuredNotebooks.length > 0 ? (
+        <NotebookCardSection heading="Featured notebooks" model={model} notebooks={featuredNotebooks} />
+      ) : null}
+
+      <section className="notebook-card-section" aria-labelledby="recent-notebooks-heading">
+        <div className="section-heading">
+          <h2 id="recent-notebooks-heading">Recent notebooks</h2>
+        </div>
+        <div className="notebook-card-grid">
+          <button type="button" className="create-notebook-card" onClick={model.onCreateNotebook}>
+            <span aria-hidden="true">+</span>
+            <strong>Create new notebook</strong>
+          </button>
+          {recentNotebooks.map((notebook) => (
+            <NotebookCard key={notebook.id} model={model} notebook={notebook} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function NotebookCardSection({
+  heading,
+  model,
+  notebooks,
+}: {
+  heading: string;
+  model: NotebookWorkspaceModel;
+  notebooks: NotebookSummary[];
+}) {
+  const headingId = `${heading.replace(/\s/g, "-").toLocaleLowerCase()}-heading`;
+
+  return (
+    <section className="notebook-card-section" aria-labelledby={headingId}>
+      <div className="section-heading">
+        <h2 id={headingId}>{heading}</h2>
+      </div>
+      <div className="notebook-card-grid">
+        {notebooks.map((notebook) => (
+          <NotebookCard key={notebook.id} model={model} notebook={notebook} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NotebookCard({
+  model,
+  notebook,
+}: {
+  model: NotebookWorkspaceModel;
+  notebook: NotebookSummary;
+}) {
+  return (
+    <article className={`notebook-card notebook-card-${notebook.tone}`}>
+      <button
+        type="button"
+        className="notebook-card-open"
+        aria-label={`Open ${notebook.title}`}
+        onClick={() => model.onSelectNotebook(notebook.id)}
+      >
+        <span className="notebook-card-icon" aria-hidden="true" />
+        <span className="notebook-card-category">{notebook.category}</span>
+        <strong>{notebook.title}</strong>
+        <small>{notebook.description}</small>
+        <span className="notebook-card-meta">
+          {formatNotebookDate(notebook.createdDateUtc)} / {model.sourceCountsByNotebookId[notebook.id] ?? 0} sources
+          {model.insightCountsByNotebookId[notebook.id]
+            ? ` / ${model.insightCountsByNotebookId[notebook.id]} insights`
+            : ""}
+        </span>
+      </button>
+      <details className="notebook-card-menu">
+        <summary aria-label={`${notebook.title} actions`}>
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+        </summary>
+        <div className="notebook-card-menu-popover">
+          <button type="button" onClick={() => model.onSelectNotebook(notebook.id)}>
+            Open
+          </button>
+          <button type="button" onClick={() => model.onEditNotebook(notebook.id)}>
+            Rename
+          </button>
+          <button type="button" onClick={() => model.onDuplicateNotebook(notebook.id)}>
+            Duplicate
+          </button>
+          <button type="button" className="danger-button" onClick={() => model.onDeleteNotebook(notebook.id)}>
+            Delete
+          </button>
+        </div>
+      </details>
+    </article>
+  );
+}
+
+function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
+  const selectedCount = model.selectedDocumentIds.length;
+  const allDocumentsSelected = model.documents.length > 0 && selectedCount === model.documents.length;
+  const canAsk =
+    model.authState.status === "authenticated" &&
+    model.question.trim().length > 0 &&
+    !model.isAsking;
+
+  function submitQuestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    model.onAskQuestion();
+  }
+
+  return (
+    <>
+      <section className="notebook-actionbar" aria-label="Notebook actions">
+        <button type="button" className="ghost-button" onClick={model.onBackToNotebooks}>
+          All notebooks
+        </button>
+        {model.activeNotebook ? (
+          <button type="button" className="ghost-button" onClick={() => model.onEditNotebook(model.activeNotebook!.id)}>
+            Rename
+          </button>
+        ) : null}
+        <button type="button" onClick={model.onCreateNotebook}>
+          + Create notebook
+        </button>
+      </section>
 
       <section className="insight-strip" aria-label="Notebook status overview">
         <div>
@@ -78,7 +230,7 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         <aside className="document-panel" aria-label="Document library">
           <div className="panel-heading">
             <div>
-              <p>Source library</p>
+              <p>Sources</p>
               <h2>Member documents</h2>
             </div>
             <button
@@ -105,12 +257,20 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
             <small>PDF, TXT, Markdown</small>
           </label>
 
+          <div className="source-search-shell" aria-hidden="true">
+            <span>Search the web for new sources</span>
+            <div>
+              <small>Web</small>
+              <small>Fast Research</small>
+            </div>
+          </div>
+
           {model.documentsError ? <p className="inline-error">{model.documentsError}</p> : null}
 
           <div className="document-list" aria-busy={model.isDocumentsLoading}>
             {model.documents.length === 0 ? (
               <p className="empty-state">
-                {model.isDocumentsLoading ? "Loading member documents." : "No member documents yet."}
+                {model.isDocumentsLoading ? "Loading member documents." : "Saved sources will appear here."}
               </p>
             ) : (
               model.documents.map((document) => {
@@ -150,8 +310,8 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         <section className="chat-panel" aria-label="Notebook chat">
           <div className="panel-heading">
             <div>
-              <p>{model.conversationId ?? "New thread"}</p>
-              <h2>Healthspan briefing</h2>
+              <p>{model.conversationId ?? model.activeNotebook?.category ?? "New thread"}</p>
+              <h2>Chat</h2>
             </div>
             <button type="button" className="ghost-button compact-button" onClick={model.onNewThread}>
               New thread
@@ -160,9 +320,25 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
 
           <div className="message-list" aria-live="polite">
             {model.messages.length === 0 ? (
-              <div className="empty-state tall-empty">
-                <strong>Optimize what is ahead.</strong>
-                <span>Ask Zori to synthesize the member record when documents are ready.</span>
+              <div className="empty-state tall-empty notebook-empty-workspace">
+                <strong>Create a clinical overview from your sources</strong>
+                <span>Upload member records, labs, reports, or notes to start a Fountain Life notebook.</span>
+                <div className="drop-zone-preview">
+                  <p>or drop your files</p>
+                  <small>PDF, TXT, Markdown</small>
+                  <label>
+                    <input
+                      accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+                      multiple
+                      type="file"
+                      onChange={(event) => {
+                        model.onUploadFiles(event.currentTarget.files);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                    <span>Upload files</span>
+                  </label>
+                </div>
               </div>
             ) : (
               model.messages.map((message, index) => (
@@ -208,8 +384,100 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
             </button>
           </form>
         </section>
+
+        <aside className="studio-panel" aria-label="Notebook studio">
+          <div className="panel-heading">
+            <div>
+              <p>Studio</p>
+              <h2>Outputs</h2>
+            </div>
+          </div>
+          <div className="studio-grid">
+            {["Audio Overview", "Slide Deck", "Mind Map", "Reports", "Flashcards", "Quiz", "Data Table"].map(
+              (item) => (
+                <button type="button" className="studio-action" key={item}>
+                  <span aria-hidden="true" />
+                  {item}
+                </button>
+              ),
+            )}
+          </div>
+          <div className="studio-empty">
+            <strong>Studio output will be saved here.</strong>
+            <span>After adding sources, create overviews, study guides, and care-plan artifacts.</span>
+          </div>
+          <button type="button" className="studio-note-button">
+            Add note
+          </button>
+        </aside>
       </section>
-    </main>
+    </>
+  );
+}
+
+function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
+  function submitNotebook(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    model.onSaveNotebook();
+  }
+
+  return (
+    <div className="notebook-editor-backdrop" role="presentation">
+      <form className="notebook-editor" aria-label="Edit notebook" onSubmit={submitNotebook}>
+        <div className="panel-heading">
+          <div>
+            <p>Notebook settings</p>
+            <h2>Rename notebook</h2>
+          </div>
+          <button type="button" className="ghost-button compact-button" onClick={model.onCancelEditNotebook}>
+            Close
+          </button>
+        </div>
+        <label>
+          <span>Title</span>
+          <input
+            value={model.notebookDraft.title}
+            onChange={(event) =>
+              model.onNotebookDraftChange({
+                ...model.notebookDraft,
+                title: event.currentTarget.value,
+              })
+            }
+          />
+        </label>
+        <label>
+          <span>Category</span>
+          <input
+            value={model.notebookDraft.category}
+            onChange={(event) =>
+              model.onNotebookDraftChange({
+                ...model.notebookDraft,
+                category: event.currentTarget.value,
+              })
+            }
+          />
+        </label>
+        <label>
+          <span>Description</span>
+          <textarea
+            rows={3}
+            value={model.notebookDraft.description}
+            onChange={(event) =>
+              model.onNotebookDraftChange({
+                ...model.notebookDraft,
+                description: event.currentTarget.value,
+              })
+            }
+          />
+        </label>
+        <div className="notebook-editor-actions">
+          <button type="button" className="ghost-button" onClick={model.onCancelEditNotebook}>
+            Cancel
+          </button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
   );
 }
 
