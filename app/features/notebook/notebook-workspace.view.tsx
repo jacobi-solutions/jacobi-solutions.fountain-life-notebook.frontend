@@ -880,7 +880,10 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
         <div className="notebook-member-list" aria-label="Workspace members">
           {(model.activeNotebook?.members ?? []).map((member, index) => (
             <span key={`${member.email ?? member.userId ?? "member"}-${member.role}-${index}`}>
-              {member.email ?? member.userId} / {member.role} / {member.status}
+              <strong>{member.email ?? "Signed-in member"}</strong>
+              <small>
+                {formatRole(member.role)} · {formatMemberStatus(member.status)}
+              </small>
             </span>
           ))}
         </div>
@@ -911,8 +914,12 @@ function parseInviteRole(value: string): NotebookInviteDraft["role"] | undefined
   return INVITE_ROLES.find((role) => role === value);
 }
 
-function formatRole(role: NotebookInviteDraft["role"]) {
+function formatRole(role: string) {
   return role.charAt(0).toLocaleUpperCase() + role.slice(1);
+}
+
+function formatMemberStatus(status: string) {
+  return status.charAt(0).toLocaleUpperCase() + status.slice(1);
 }
 
 function formatBytes(bytes: number) {

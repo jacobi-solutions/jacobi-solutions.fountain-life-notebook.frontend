@@ -1186,6 +1186,26 @@
   font-size: 0.86rem;
 }
 
+.notebook-member-list span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.notebook-member-list strong {
+  color: rgba(247, 247, 242, 0.9);
+  font-weight: 650;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notebook-member-list small {
+  color: rgba(247, 247, 242, 0.58);
+  flex: 0 0 auto;
+}
+
 .notebook-editor-actions {
   display: flex;
   justify-content: flex-end;

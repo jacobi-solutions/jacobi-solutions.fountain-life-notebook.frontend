@@ -150,17 +150,15 @@ export function NotebookWorkspace() {
     onMutate: () => setUploadBatchError(undefined),
     onError: (error) =>
       setUploadBatchError(toErrorMessage(error, DOCUMENT_UPLOAD_ERROR_MESSAGE)),
-    onSuccess: async (document) => {
-      if (activeNotebookId) {
-        updateNotebookSession(activeNotebookId, (current) => ({
-          selectedDocumentIds: addSelectedDocumentId(
-            current.selectedDocumentIds,
-            document.id,
-          ),
-        }));
-      }
+    onSuccess: async (document, { notebookId }) => {
+      updateNotebookSession(notebookId, (current) => ({
+        selectedDocumentIds: addSelectedDocumentId(
+          current.selectedDocumentIds,
+          document.id,
+        ),
+      }));
       setActiveDocumentId(document.id);
-      await invalidateActiveNotebookData();
+      await invalidateNotebookData(notebookId);
     },
   });
 
@@ -174,7 +172,7 @@ export function NotebookWorkspace() {
     }) => documents.deleteDocument(documentId, notebookId),
     onMutate: ({ documentId }) => setDeleteDocumentId(documentId),
     onSettled: () => setDeleteDocumentId(undefined),
-    onSuccess: async (_result, { documentId }) => {
+    onSuccess: async (_result, { documentId, notebookId }) => {
       setNotebookSessions((current) =>
         Object.fromEntries(
           Object.entries(current).map(([notebookId, session]) => [
@@ -191,7 +189,7 @@ export function NotebookWorkspace() {
       if (activeDocumentId === documentId) {
         setActiveDocumentId(undefined);
       }
-      await invalidateActiveNotebookData();
+      await invalidateNotebookData(notebookId);
     },
   });
 
@@ -271,13 +269,19 @@ export function NotebookWorkspace() {
     ]),
   );
 
-  async function invalidateActiveNotebookData() {
-    await Promise.all([
+  async function invalidateNotebookData(notebookId?: string) {
+    const invalidations = [
       queryClient.invalidateQueries({ queryKey: NOTEBOOKS_QUERY_KEY }),
-      queryClient.invalidateQueries({
-        queryKey: [...DOCUMENTS_QUERY_KEY, activeNotebookId],
-      }),
-    ]);
+    ];
+    if (notebookId) {
+      invalidations.push(
+        queryClient.invalidateQueries({
+          queryKey: [...DOCUMENTS_QUERY_KEY, notebookId],
+        }),
+      );
+    }
+
+    await Promise.all(invalidations);
   }
 
   function handleUploadFiles(files: FileList | null) {

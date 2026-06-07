@@ -135,7 +135,7 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
       triggerRef.current?.focus();
       shouldRestoreTriggerFocusRef.current = false;
     }
-  }, [stage]);
+  }, [closeFlow, stage]);
 
   useEffect(() => {
     if (stage !== "acknowledgment") {
