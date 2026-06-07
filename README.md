@@ -21,8 +21,8 @@ It assumes the repos are cloned as siblings:
 
 ```text
 Ramin/
-  FountainLifeNotebook.Backend/
-  fountain-life-notebook.frontend/
+  JacobiSolutions.FountainLifeNotebook.Backend/
+  jacobi-solutions.fountain-life-notebook.frontend/
 ```
 
 From the sibling backend repo:
@@ -111,8 +111,8 @@ This assumes the repos are checked out as siblings:
 
 ```text
 Ramin/
-  FountainLifeNotebook.Backend/
-  fountain-life-notebook.frontend/
+  JacobiSolutions.FountainLifeNotebook.Backend/
+  jacobi-solutions.fountain-life-notebook.frontend/
 ```
 
 ## Checks

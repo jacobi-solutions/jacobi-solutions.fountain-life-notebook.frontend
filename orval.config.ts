@@ -2,7 +2,7 @@ import { defineConfig } from "orval";
 
 export default defineConfig({
   fountainLifeApi: {
-    input: "../FountainLifeNotebook.Backend/openapi/fountain-life-api.json",
+    input: "../JacobiSolutions.FountainLifeNotebook.Backend/openapi/fountain-life-api.json",
     output: {
       client: "fetch",
       override: {

@@ -15,7 +15,7 @@ Central policy:
 
 Repository root:
 
-- `/Users/shanedrye/jacobi/Ramin/fountain-life-notebook.frontend`
+- `/Users/shanedrye/jacobi/Ramin/jacobi-solutions.fountain-life-notebook.frontend`
 
 Key areas:
 
@@ -53,4 +53,4 @@ If backend request or response shapes change:
 Developer convenience:
 
 - `npm run contract:sync` is available in both sibling repos and runs backend export plus frontend generation.
-- `contract:sync` assumes `FountainLifeNotebook.Backend` and `fountain-life-notebook.frontend` are checked out as sibling folders.
+- `contract:sync` assumes `JacobiSolutions.FountainLifeNotebook.Backend` and `jacobi-solutions.fountain-life-notebook.frontend` are checked out as sibling folders.

@@ -1,12 +1,12 @@
 {
-  "name": "fountain-life-notebook.frontend",
+  "name": "jacobi-solutions.fountain-life-notebook.frontend",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "react-router build",
     "cap:sync": "npm run build && cap sync",
     "contract:generate": "orval --config orval.config.ts",
-    "contract:sync": "npm --prefix ../FountainLifeNotebook.Backend run contract:export && npm run contract:generate",
+    "contract:sync": "npm --prefix ../JacobiSolutions.FountainLifeNotebook.Backend run contract:export && npm run contract:generate",
     "dev": "react-router dev",
     "start": "vite preview --host 0.0.0.0 --outDir build/client",
     "test": "vitest run",
