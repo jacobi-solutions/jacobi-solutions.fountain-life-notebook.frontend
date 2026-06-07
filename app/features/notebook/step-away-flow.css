@@ -1,0 +1,812 @@
+.step-away-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  border: 1px solid rgba(244, 197, 139, 0.26);
+  border-radius: 8px;
+  padding: 0.95rem 1rem;
+  color: #fff1dc;
+  background:
+    linear-gradient(135deg, rgba(87, 48, 35, 0.66), rgba(42, 29, 26, 0.58)),
+    rgba(255, 220, 174, 0.08);
+  box-shadow: 0 14px 36px rgba(5, 7, 11, 0.18);
+}
+
+.step-away-entry div {
+  min-width: 0;
+}
+
+.step-away-entry p {
+  margin: 0;
+  color: #fff5e6;
+  font-size: 1rem;
+  font-weight: 520;
+  line-height: 1.25;
+}
+
+.step-away-entry span {
+  display: block;
+  margin-top: 0.12rem;
+  color: rgba(255, 239, 218, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.gallery-step-away {
+  margin: 0 auto clamp(1.35rem, 3vw, 2.25rem);
+}
+
+.document-step-away {
+  display: grid;
+  flex: 0 0 auto;
+  margin-top: 0.8rem;
+}
+
+.document-step-away .step-away-trigger {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.step-away-trigger {
+  flex: 0 0 auto;
+  min-height: 2.45rem;
+  border: 1px solid rgba(98, 54, 37, 0.34);
+  border-radius: 999px;
+  padding: 0.58rem 0.95rem;
+  color: #3c2118;
+  font-size: 0.92rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  background:
+    linear-gradient(135deg, rgba(253, 221, 169, 0.96), rgba(217, 132, 92, 0.96)),
+    #efb77e;
+  box-shadow: 0 12px 28px rgba(20, 8, 3, 0.22);
+}
+
+.step-away-trigger:hover:not(:disabled) {
+  background:
+    linear-gradient(135deg, rgba(255, 231, 190, 0.98), rgba(224, 146, 101, 0.98)),
+    #f3bd86;
+}
+
+.step-away-trigger:focus-visible,
+.step-away-acknowledgment:focus-visible,
+.step-away-primary-action:focus-visible,
+.step-away-subtle-action:focus-visible,
+.step-away-continue-button:focus-visible,
+.step-away-sound-toggle:focus-visible,
+.step-away-return-link:focus-visible {
+  outline: 3px solid rgba(251, 190, 117, 0.84);
+  outline-offset: 3px;
+}
+
+.step-away-acknowledgment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(41, 24, 20, 0.58);
+  backdrop-filter: blur(5px) saturate(0.9);
+}
+
+.step-away-acknowledgment {
+  display: grid;
+  gap: 1.15rem;
+  width: min(100%, 34rem);
+  border: 1px solid rgba(251, 214, 169, 0.38);
+  border-radius: 8px;
+  padding: clamp(1.2rem, 3vw, 2rem);
+  color: #fff4df;
+  background:
+    linear-gradient(145deg, rgba(82, 47, 37, 0.96), rgba(50, 30, 26, 0.98)),
+    #4e2d25;
+  box-shadow: 0 30px 88px rgba(20, 8, 3, 0.44);
+}
+
+.step-away-acknowledgment p {
+  margin: 0;
+  color: #fff0d9;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 380;
+  line-height: 1.28;
+}
+
+.step-away-acknowledgment-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.step-away-primary-action,
+.step-away-subtle-action {
+  min-height: 2.7rem;
+}
+
+.step-away-primary-action {
+  color: #3d2118;
+  background: #f4c58b;
+}
+
+.step-away-primary-action:hover:not(:disabled) {
+  background: #f8d6a5;
+}
+
+.step-away-subtle-action {
+  border: 1px solid rgba(255, 231, 199, 0.28);
+  color: rgba(255, 242, 221, 0.78);
+  background: transparent;
+}
+
+.step-away-subtle-action:hover:not(:disabled) {
+  color: #fff2dd;
+  background: rgba(255, 231, 199, 0.08);
+}
+
+.step-away-takeover,
+.step-away-release {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #41251c;
+}
+
+.step-away-takeover {
+  display: grid;
+  place-items: center;
+  padding: clamp(1.2rem, 4vw, 3rem);
+  isolation: isolate;
+  background: rgba(41, 24, 20, 0.58);
+  backdrop-filter: blur(5px) saturate(0.9);
+}
+
+.step-away-takeover::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 226, 176, 0.34), transparent 26rem),
+    radial-gradient(circle at 82% 8%, rgba(181, 95, 80, 0.18), transparent 24rem),
+    linear-gradient(145deg, #c98665 0%, #b87760 52%, #805443 100%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.step-away-takeover::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(48, 31, 24, 0.4),
+      rgba(48, 31, 24, 0.2) 44%,
+      rgba(48, 31, 24, 0.48)
+    ),
+    url("/wellness/step-away-nature.jpg") center / cover no-repeat;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.step-away-takeover.step-away-cycle-1::before {
+  animation: step-away-warm-arrival 16s ease-in-out both;
+}
+
+.step-away-takeover.step-away-cycle-2::before,
+.step-away-takeover.step-away-cycle-3::before {
+  opacity: 1;
+}
+
+.step-away-takeover.step-away-cycle-3::after {
+  animation: step-away-nature-arrival 15s ease-in-out both;
+}
+
+.step-away-takeover.release-pending {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.step-away-takeover.release-pending::before {
+  opacity: 0;
+}
+
+.step-away-takeover.release-pending::after {
+  opacity: 1;
+}
+
+.step-away-takeover.continued {
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 226, 176, 0.28), transparent 26rem),
+    radial-gradient(circle at 82% 8%, rgba(181, 95, 80, 0.16), transparent 24rem),
+    linear-gradient(145deg, #c98665 0%, #b87760 52%, #805443 100%);
+  backdrop-filter: blur(8px) saturate(0.64);
+}
+
+.step-away-takeover.continued::before {
+  opacity: 1;
+}
+
+.step-away-takeover.continued::after {
+  opacity: 1;
+}
+
+.step-away-takeover.exiting,
+.step-away-release.exiting {
+  animation: step-away-flow-exit 1.2s ease-in-out both;
+}
+
+.step-away-dissolution-layer {
+  position: absolute;
+  top: -2%;
+  bottom: -2%;
+  left: 50%;
+  z-index: 1;
+  width: max(104vw, 165vh);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 5s ease-in-out;
+}
+
+.step-away-dissolution-layer.forming,
+.step-away-dissolution-layer.falling {
+  opacity: 1;
+}
+
+.step-away-fragment {
+  position: absolute;
+  display: block;
+  border-radius: 8px;
+  opacity: 0;
+  background: var(--fragment-bg);
+  box-shadow:
+    0 18px 42px rgba(5, 7, 11, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transform-origin: 50% 60%;
+}
+
+.step-away-dissolution-layer.forming .step-away-fragment {
+  animation: step-away-fragment-form 16s ease-in-out both;
+}
+
+.step-away-dissolution-layer.falling .step-away-fragment {
+  animation: step-away-fragment-release var(--fragment-fall-duration) cubic-bezier(0.45, 0, 0.2, 1) var(--fragment-fall-delay) both;
+}
+
+.step-away-sound-toggle {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 3;
+  min-height: 2.25rem;
+  border: 1px solid rgba(255, 248, 232, 0.26);
+  border-radius: 999px;
+  padding: 0.35rem 0.78rem;
+  color: rgba(255, 248, 232, 0.88);
+  background: rgba(54, 26, 18, 0.28);
+  font-size: 0.78rem;
+  box-shadow: 0 12px 28px rgba(31, 15, 10, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.step-away-sound-toggle:hover:not(:disabled) {
+  color: #fff8e8;
+  background: rgba(54, 26, 18, 0.38);
+}
+
+.step-away-breathing-panel {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  width: min(100%, 32rem);
+  text-align: center;
+}
+
+.step-away-takeover.release-pending .step-away-breathing-panel {
+  animation: step-away-breathing-release 1.6s ease-in-out both;
+}
+
+.step-away-breathing-shape {
+  position: relative;
+  display: grid;
+  width: clamp(10rem, 34vw, 18rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(255, 230, 198, 0.34);
+  border-radius: 36%;
+  background:
+    radial-gradient(circle, rgba(255, 237, 206, 0.72), rgba(223, 151, 101, 0.26) 58%, rgba(116, 65, 47, 0.22)),
+    rgba(255, 220, 174, 0.2);
+  box-shadow:
+    0 0 0 1.1rem rgba(255, 218, 175, 0.08),
+    0 26px 86px rgba(73, 41, 30, 0.24);
+  animation: step-away-box-breath 16s ease-in-out infinite;
+}
+
+.step-away-breathing-shape span {
+  display: block;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(255, 244, 222, 0.7);
+  box-shadow: 0 0 38px rgba(255, 240, 207, 0.54);
+}
+
+.step-away-breathing-detail,
+.step-away-breathing-count {
+  margin: 0;
+  color: #fff8e8;
+  text-shadow:
+    0 1px 0 rgba(54, 26, 18, 0.95),
+    0 -1px 0 rgba(54, 26, 18, 0.95),
+    1px 0 0 rgba(54, 26, 18, 0.95),
+    -1px 0 0 rgba(54, 26, 18, 0.95),
+    0 12px 30px rgba(31, 15, 10, 0.42);
+}
+
+.step-away-breathing-detail {
+  margin-top: 1.1rem;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+}
+
+.step-away-breathing-panel h2 {
+  margin: 0;
+  color: #fff8e8;
+  font-size: clamp(3.6rem, 10vw, 7rem);
+  font-weight: 360;
+  line-height: 0.95;
+  -webkit-text-stroke: 1.2px rgba(54, 26, 18, 0.92);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 rgba(54, 26, 18, 0.95),
+    0 -1px 0 rgba(54, 26, 18, 0.95),
+    1px 0 0 rgba(54, 26, 18, 0.95),
+    -1px 0 0 rgba(54, 26, 18, 0.95),
+    0 18px 42px rgba(31, 15, 10, 0.42);
+}
+
+.step-away-breathing-count {
+  font-size: 0.92rem;
+}
+
+.step-away-breathing-return {
+  margin-top: 1rem;
+  color: #fff8e8;
+  text-shadow:
+    0 1px 0 rgba(54, 26, 18, 0.9),
+    0 10px 24px rgba(31, 15, 10, 0.5);
+}
+
+.step-away-breathing-return:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.step-away-release {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  gap: 1.5rem;
+  padding: clamp(1.2rem, 5vw, 4rem);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(48, 31, 24, 0.44),
+      rgba(48, 31, 24, 0.2) 42%,
+      rgba(48, 31, 24, 0.52)
+    ),
+    url("/wellness/step-away-nature.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #d89468 0%, #b97860 48%, #674438 100%);
+}
+
+.step-away-release-content {
+  display: grid;
+  width: min(100%, 48rem);
+  min-height: clamp(13rem, 28vh, 22rem);
+  place-items: center;
+}
+
+.step-away-release.nature-only .step-away-release-content {
+  animation: step-away-fade-to-nature 7s ease-in-out both;
+  pointer-events: none;
+}
+
+.step-away-release-message {
+  margin: 0;
+  color: #fff8e8;
+  font-size: clamp(2.4rem, 5.7vw, 5.1rem);
+  font-weight: 380;
+  line-height: 1.06;
+  text-align: center;
+  text-wrap: balance;
+  -webkit-text-stroke: 1.15px rgba(54, 26, 18, 0.9);
+  animation: step-away-release-message 9.5s ease-in-out both;
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 rgba(54, 26, 18, 0.95),
+    0 -1px 0 rgba(54, 26, 18, 0.95),
+    1px 0 0 rgba(54, 26, 18, 0.95),
+    -1px 0 0 rgba(54, 26, 18, 0.95),
+    0 18px 44px rgba(31, 15, 10, 0.42);
+}
+
+.step-away-release-message.final {
+  animation-name: step-away-release-message-final;
+}
+
+.step-away-release-message.sourced {
+  max-width: 42rem;
+  font-size: clamp(1.7rem, 4.1vw, 3.15rem);
+  line-height: 1.14;
+}
+
+.step-away-release-citation {
+  align-self: start;
+  max-width: 36rem;
+  margin: 1.1rem auto 0;
+  color: rgba(255, 248, 232, 0.86);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  text-align: center;
+  animation: step-away-release-message 9.5s ease-in-out both;
+  text-shadow: 0 2px 10px rgba(45, 22, 15, 0.52);
+}
+
+.step-away-release-citation a {
+  color: #fff8e8;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22rem;
+}
+
+.step-away-release-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  animation: step-away-release-actions-arrive 1.8s ease-in-out both;
+}
+
+.step-away-continue-button {
+  min-height: 2.65rem;
+  border: 1px solid rgba(255, 248, 232, 0.42);
+  color: #3d231a;
+  background: rgba(255, 248, 232, 0.88);
+  box-shadow: 0 14px 34px rgba(45, 22, 15, 0.22);
+}
+
+.step-away-continue-button:hover:not(:disabled) {
+  background: #fff8e8;
+}
+
+.step-away-return-link {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0.35rem 0;
+  color: rgba(61, 35, 26, 0.78);
+  background: transparent;
+  font-size: 1rem;
+  text-decoration: underline;
+  text-underline-offset: 0.26rem;
+}
+
+.step-away-return-link:hover:not(:disabled) {
+  color: #3d231a;
+  background: transparent;
+  transform: none;
+}
+
+.step-away-release-actions .step-away-return-link {
+  color: #fff8e8;
+  text-shadow:
+    0 1px 0 rgba(54, 26, 18, 0.78),
+    0 10px 24px rgba(31, 15, 10, 0.46);
+}
+
+.step-away-release-actions .step-away-return-link:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+@keyframes step-away-box-breath {
+  0%,
+  100% {
+    border-radius: 42%;
+    transform: scale(0.72);
+  }
+
+  25%,
+  50% {
+    border-radius: 28%;
+    transform: scale(1);
+  }
+
+  75% {
+    border-radius: 42%;
+    transform: scale(0.72);
+  }
+}
+
+@keyframes step-away-breathing-release {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-0.65rem);
+  }
+}
+
+@keyframes step-away-fragment-release {
+  0% {
+    opacity: 0.62;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+
+  18% {
+    opacity: 0.56;
+  }
+
+  58% {
+    opacity: 0.24;
+  }
+
+  82% {
+    opacity: 0.06;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--fragment-x), var(--fragment-y), 0) rotate(var(--fragment-rotate)) scale(var(--fragment-scale));
+  }
+}
+
+@keyframes step-away-fragment-form {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+
+  38% {
+    opacity: 0.18;
+  }
+
+  100% {
+    opacity: 0.62;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes step-away-warm-arrival {
+  0% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0.18;
+  }
+
+  50% {
+    opacity: 0.44;
+  }
+
+  75% {
+    opacity: 0.76;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes step-away-warm-departure {
+  0% {
+    opacity: 1;
+  }
+
+  26% {
+    opacity: 0.74;
+  }
+
+  68% {
+    opacity: 0.26;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes step-away-nature-arrival {
+  0% {
+    opacity: 0;
+  }
+
+  28% {
+    opacity: 0.16;
+  }
+
+  64% {
+    opacity: 0.58;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes step-away-release-message {
+  0% {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+
+  34%,
+  66% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-0.85rem);
+  }
+}
+
+@keyframes step-away-release-message-final {
+  0% {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+
+  34%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes step-away-release-actions-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes step-away-fade-to-nature {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes step-away-flow-exit {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .step-away-entry {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem;
+  }
+
+  .step-away-trigger {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .step-away-acknowledgment-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .step-away-primary-action,
+  .step-away-subtle-action {
+    width: 100%;
+  }
+
+  .step-away-breathing-panel h2 {
+    font-size: clamp(3rem, 18vw, 5rem);
+  }
+
+  .step-away-release-message {
+    font-size: clamp(2rem, 11vw, 3.5rem);
+  }
+
+  .step-away-release-message.sourced {
+    max-width: 22rem;
+    font-size: clamp(1.24rem, 6.2vw, 1.55rem);
+    line-height: 1.22;
+  }
+
+  .step-away-release-citation {
+    max-width: 19rem;
+    margin-top: 0.8rem;
+    font-size: 0.78rem;
+  }
+
+  .step-away-release-actions {
+    display: grid;
+    width: min(100%, 20rem);
+  }
+
+  .step-away-continue-button,
+  .step-away-return-link {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-away-trigger,
+  .step-away-primary-action,
+  .step-away-subtle-action,
+  .step-away-continue-button,
+  .step-away-sound-toggle,
+  .step-away-return-link,
+  .step-away-takeover,
+  .step-away-dissolution-layer {
+    transition-duration: 1ms;
+  }
+
+  .step-away-breathing-shape,
+  .step-away-takeover.step-away-cycle-1::before,
+  .step-away-takeover.step-away-cycle-3::before,
+  .step-away-dissolution-layer.forming .step-away-fragment,
+  .step-away-dissolution-layer.falling .step-away-fragment,
+  .step-away-release-actions,
+  .step-away-release-message,
+  .step-away-release-message.final {
+    animation: none;
+  }
+
+  .step-away-release-message,
+  .step-away-release-message.final {
+    opacity: 1;
+    transform: none;
+  }
+
+  .step-away-takeover::before {
+    opacity: 1;
+  }
+
+  .step-away-takeover::after {
+    opacity: 1;
+    transform: none;
+  }
+
+  .step-away-dissolution-layer.forming .step-away-fragment,
+  .step-away-dissolution-layer.falling .step-away-fragment {
+    opacity: 0;
+  }
+}
