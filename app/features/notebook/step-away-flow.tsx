@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   getBreathingDurationMs,
@@ -113,6 +113,43 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
   const activeReleaseMessage = RELEASE_MESSAGES[releaseMessageIndex];
   const canContinueBreathing =
     stage === "release" && releaseMessageIndex === RELEASE_MESSAGES.length - 1;
+
+  const clearReleaseEntryTimeout = useCallback(() => {
+    if (releaseEntryTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(releaseEntryTimeoutRef.current);
+    releaseEntryTimeoutRef.current = null;
+  }, []);
+
+  const resetFlow = useCallback(() => {
+    clearReleaseEntryTimeout();
+    setElapsedMs(0);
+    setIsExitingFlow(false);
+    setIsNatureOnlyRelease(false);
+    setReleaseMessageIndex(0);
+    lastChimeKeyRef.current = "";
+    shouldRestoreTriggerFocusRef.current = true;
+    setStage("idle");
+  }, [clearReleaseEntryTimeout]);
+
+  const closeFlow = useCallback(
+    ({ fade = false }: { fade?: boolean } = {}) => {
+      if (fade) {
+        setIsExitingFlow(true);
+        window.setTimeout(() => {
+          void exitFullscreen();
+          resetFlow();
+        }, FLOW_EXIT_FADE_MS);
+        return;
+      }
+
+      void exitFullscreen();
+      resetFlow();
+    },
+    [resetFlow],
+  );
 
   useEffect(() => {
     if (stage === "acknowledgment") {
@@ -260,45 +297,11 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
     setStage("breathing");
   }
 
-  function closeFlow({ fade = false } = {}) {
-    if (fade) {
-      setIsExitingFlow(true);
-      window.setTimeout(() => {
-        void exitFullscreen();
-        resetFlow();
-      }, FLOW_EXIT_FADE_MS);
-      return;
-    }
-
-    void exitFullscreen();
-    resetFlow();
-  }
-
-  function resetFlow() {
-    clearReleaseEntryTimeout();
-    setElapsedMs(0);
-    setIsExitingFlow(false);
-    setIsNatureOnlyRelease(false);
-    setReleaseMessageIndex(0);
-    lastChimeKeyRef.current = "";
-    shouldRestoreTriggerFocusRef.current = true;
-    setStage("idle");
-  }
-
   function startContinuedBreathing() {
     setElapsedMs(0);
     setIsNatureOnlyRelease(false);
     lastChimeKeyRef.current = "";
     setStage("continuedBreathing");
-  }
-
-  function clearReleaseEntryTimeout() {
-    if (releaseEntryTimeoutRef.current === null) {
-      return;
-    }
-
-    window.clearTimeout(releaseEntryTimeoutRef.current);
-    releaseEntryTimeoutRef.current = null;
   }
 
   async function playBreathingChime(phase: "inhale" | "exhale") {
