@@ -1304,6 +1304,25 @@
   background-color: #ffffff;
 }
 
+.notebook-local-resource-message {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid rgba(134, 215, 242, 0.24);
+  border-radius: 8px;
+  padding: 0.9rem;
+  color: rgba(247, 247, 242, 0.76);
+  background: rgba(134, 215, 242, 0.07);
+}
+
+.notebook-local-resource-message p {
+  margin: 0;
+}
+
+.notebook-local-resource-message a {
+  color: #8bdcf5;
+  font-weight: 700;
+}
+
 .notebook-member-list {
   display: grid;
   gap: 0.4rem;

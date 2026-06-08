@@ -9,6 +9,7 @@ import {
   filterNotebooks,
   formatAuthStatus,
   formatNotebookDate,
+  isLocalAuthSession,
   orderNotebooksByMostRecent,
   shouldRequestSignIn,
 } from "./notebook-workspace.vm";
@@ -42,9 +43,20 @@ const INVITE_ROLES: NotebookInviteDraft["role"][] = [
   "clinician",
   "viewer",
 ];
+const DEPLOYED_FRONTEND_URL =
+  import.meta.env.VITE_DEPLOYED_FRONTEND_URL ??
+  "https://d10nrh49pw7gmt.cloudfront.net";
 const INTERACTIVE_SELECTOR =
   "button, a, input, textarea, select, summary, label, [role='button'], [role='link'], [tabindex]";
 const AUTH_BYPASS_SELECTOR = "[data-auth-bypass='true']";
+
+function isDesktopInputDevice() {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return true;
+  }
+
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
   const authStatusLabel = formatAuthStatus(model.authState);
@@ -384,6 +396,30 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
     }
 
     model.onAskQuestion();
+  }
+
+  function submitQuestionFromKeyboard(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.nativeEvent.isComposing ||
+      !isDesktopInputDevice()
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    if (requiresSignIn) {
+      model.onSignIn();
+      return;
+    }
+
+    if (canAsk) {
+      model.onAskQuestion();
+    }
   }
 
   function showWorkspaceSection(sectionId: string) {
@@ -748,6 +784,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                 onChange={(event) =>
                   model.onQuestionChange(event.currentTarget.value)
                 }
+                onKeyDown={submitQuestionFromKeyboard}
               />
               <button
                 type="submit"
@@ -980,9 +1017,14 @@ function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
 function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
   const requiresSignIn = shouldRequestSignIn(model.authState.status);
   const isAuthLoading = model.authState.status === "loading";
+  const isLocalSession = isLocalAuthSession(model.authState);
 
   function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isLocalSession) {
+      return;
+    }
+
     if (requiresSignIn) {
       model.onSignIn();
       return;
@@ -1011,77 +1053,107 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
             Close
           </button>
         </div>
-        <label>
-          <span>Email</span>
-          <input
-            autoComplete="email"
-            type="email"
-            value={model.notebookInviteDraft.email}
-            onChange={(event) =>
-              model.onInviteDraftChange({
-                ...model.notebookInviteDraft,
-                email: event.currentTarget.value,
-              })
-            }
-          />
-        </label>
-        <label>
-          <span>Role</span>
-          <select
-            value={model.notebookInviteDraft.role}
-            onChange={(event) => {
-              const role = parseInviteRole(event.currentTarget.value);
-              if (!role) {
-                return;
-              }
+        {isLocalSession ? (
+          <>
+            <div className="notebook-local-resource-message">
+              <p>
+                Adding users is only available in the deployed resource.
+              </p>
+              <a
+                href={DEPLOYED_FRONTEND_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open deployed Fountain Life Notebook
+              </a>
+            </div>
+            <div className="notebook-editor-actions">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={model.onCancelInviteMember}
+              >
+                Close
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <label>
+              <span>Email</span>
+              <input
+                autoComplete="email"
+                type="email"
+                value={model.notebookInviteDraft.email}
+                onChange={(event) =>
+                  model.onInviteDraftChange({
+                    ...model.notebookInviteDraft,
+                    email: event.currentTarget.value,
+                  })
+                }
+              />
+            </label>
+            <label>
+              <span>Role</span>
+              <select
+                value={model.notebookInviteDraft.role}
+                onChange={(event) => {
+                  const role = parseInviteRole(event.currentTarget.value);
+                  if (!role) {
+                    return;
+                  }
 
-              model.onInviteDraftChange({
-                ...model.notebookInviteDraft,
-                role,
-              });
-            }}
-          >
-            {INVITE_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {formatRole(role)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="notebook-member-list" aria-label="Workspace members">
-          {(model.activeNotebook?.members ?? []).map((member, index) => (
-            <span key={`${member.email ?? member.userId ?? "member"}-${member.role}-${index}`}>
-              <strong>{member.email ?? "Signed-in member"}</strong>
-              <small>
-                {formatRole(member.role)} · {formatMemberStatus(member.status)}
-              </small>
-            </span>
-          ))}
-        </div>
-        <div className="notebook-editor-actions">
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={model.onCancelInviteMember}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={
-              isAuthLoading ||
-              (!requiresSignIn &&
-              (model.isInvitingMember ||
-                model.notebookInviteDraft.email.trim().length === 0))
-            }
-          >
-            {requiresSignIn
-              ? "Sign in to invite"
-              : model.isInvitingMember
-                ? "Inviting"
-                : "Send invite"}
-          </button>
-        </div>
+                  model.onInviteDraftChange({
+                    ...model.notebookInviteDraft,
+                    role,
+                  });
+                }}
+              >
+                {INVITE_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {formatRole(role)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="notebook-member-list" aria-label="Workspace members">
+              {(model.activeNotebook?.members ?? []).map((member, index) => (
+                <span
+                  key={`${member.email ?? member.userId ?? "member"}-${member.role}-${index}`}
+                >
+                  <strong>{member.email ?? "Signed-in member"}</strong>
+                  <small>
+                    {formatRole(member.role)} · {formatMemberStatus(member.status)}
+                  </small>
+                </span>
+              ))}
+            </div>
+            <div className="notebook-editor-actions">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={model.onCancelInviteMember}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  isAuthLoading ||
+                  (!requiresSignIn &&
+                    (model.isInvitingMember ||
+                      model.notebookInviteDraft.email.trim().length === 0))
+                }
+              >
+                {requiresSignIn
+                  ? "Sign in to invite"
+                  : model.isInvitingMember
+                    ? "Inviting"
+                    : "Send invite"}
+              </button>
+            </div>
+          </>
+        )}
       </form>
     </div>
   );

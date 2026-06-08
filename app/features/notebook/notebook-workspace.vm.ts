@@ -34,6 +34,13 @@ export function shouldRequestSignIn(status: AuthSnapshot["status"]) {
   return status === "signed-out";
 }
 
+export function isLocalAuthSession(authState: AuthSnapshot) {
+  return (
+    authState.status === "authenticated" &&
+    authState.email?.endsWith("@fountainlife.local") === true
+  );
+}
+
 export function formatAuthStatus(authState: AuthSnapshot) {
   switch (authState.status) {
     case "authenticated":
@@ -200,6 +207,17 @@ export function normalizeSelectedDocumentIds(
 ) {
   const documentIds = new Set(documents.map((document) => document.id));
   return uniqueDocumentIds(selectedDocumentIds).filter((documentId) => documentIds.has(documentId));
+}
+
+export function resolveEffectiveSelectedDocumentIds(
+  selectedDocumentIds: string[],
+  documents: DocumentSummary[],
+) {
+  const normalizedSelection = normalizeSelectedDocumentIds(selectedDocumentIds, documents);
+
+  return normalizedSelection.length > 0
+    ? normalizedSelection
+    : documents.map((document) => document.id);
 }
 
 export function addSelectedDocumentId(selectedDocumentIds: string[], documentId: string) {

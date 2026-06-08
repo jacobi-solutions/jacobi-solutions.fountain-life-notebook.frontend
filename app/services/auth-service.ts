@@ -8,6 +8,9 @@ export interface AuthSnapshot {
 }
 
 type Listener = () => void;
+type CognitoSignoutRedirectArgs = NonNullable<Parameters<UserManager["signoutRedirect"]>[0]> & {
+  client_id: string;
+};
 
 export class AuthService {
   private readonly config: AppConfig;
@@ -122,7 +125,16 @@ export class AuthService {
       return;
     }
 
-    await this.manager.signoutRedirect();
+    // Reaching this branch means the manager was constructed with a non-empty client id.
+    const signOutArgs: CognitoSignoutRedirectArgs = {
+      client_id: this.config.cognitoClientId,
+      post_logout_redirect_uri: this.homePageRedirectUri,
+      extraQueryParams: {
+        logout_uri: this.homePageRedirectUri,
+      },
+    };
+
+    await this.manager.signoutRedirect(signOutArgs);
   }
 
   private redirectToHomePage() {

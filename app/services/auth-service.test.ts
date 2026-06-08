@@ -3,6 +3,12 @@ import { AuthService } from "./auth-service";
 import type { AppConfig } from "../core/app-config";
 
 const userManagerSettings = vi.hoisted(() => [] as unknown[]);
+const userManagerInstances = vi.hoisted(
+  () =>
+    [] as Array<{
+      signoutRedirect: ReturnType<typeof vi.fn>;
+    }>,
+);
 
 vi.mock("oidc-client-ts", () => ({
   UserManager: vi.fn(function MockUserManager(this: {
@@ -24,12 +30,14 @@ vi.mock("oidc-client-ts", () => ({
     this.signinRedirect = vi.fn();
     this.signinRedirectCallback = vi.fn();
     this.signoutRedirect = vi.fn();
+    userManagerInstances.push(this);
   }),
 }));
 
 describe("AuthService", () => {
   afterEach(() => {
     userManagerSettings.length = 0;
+    userManagerInstances.length = 0;
     vi.unstubAllGlobals();
   });
 
@@ -99,6 +107,26 @@ describe("AuthService", () => {
     expect(userManagerSettings[0]).toMatchObject({
       redirect_uri: "https://app.example.com/auth/callback",
       post_logout_redirect_uri: "https://app.example.com/",
+    });
+  });
+
+  it("sends Cognito hosted UI logout parameters with the workspace return URL", async () => {
+    const auth = new AuthService({
+      ...baseConfig,
+      authMode: "cognito",
+      cognitoAuthority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
+      cognitoClientId: "client-id",
+      cognitoRedirectUri: "https://app.example.com/auth/callback",
+    });
+
+    await auth.signOut();
+
+    expect(userManagerInstances[0]?.signoutRedirect).toHaveBeenCalledWith({
+      client_id: "client-id",
+      post_logout_redirect_uri: "https://app.example.com/",
+      extraQueryParams: {
+        logout_uri: "https://app.example.com/",
+      },
     });
   });
 });

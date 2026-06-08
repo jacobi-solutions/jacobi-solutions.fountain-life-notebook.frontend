@@ -14,8 +14,10 @@ import {
   formatNotebookDate,
   getNotebookSourceCount,
   inferNotebookTitleFromPrompt,
+  isLocalAuthSession,
   normalizeSelectedDocumentIds,
   orderNotebooksByMostRecent,
+  resolveEffectiveSelectedDocumentIds,
   shouldAutoNameNotebook,
   shouldRequestSignIn,
   toErrorMessage,
@@ -49,6 +51,23 @@ describe("notebook workspace view model", () => {
     expect(shouldRequestSignIn("signed-out")).toBe(true);
     expect(shouldRequestSignIn("authenticated")).toBe(false);
     expect(shouldRequestSignIn("loading")).toBe(false);
+    expect(
+      isLocalAuthSession({
+        email: "local.user@fountainlife.local",
+        status: "authenticated",
+        subject: "local-user",
+      }),
+    ).toBe(true);
+    expect(
+      isLocalAuthSession({
+        email: "shanedrye@gmail.com",
+        status: "authenticated",
+        subject: "cognito-user",
+      }),
+    ).toBe(false);
+    expect(
+      isLocalAuthSession({ email: null, status: "signed-out", subject: null }),
+    ).toBe(false);
   });
 
   it("normalizes selected document ids against the current document list", () => {
@@ -58,6 +77,17 @@ describe("notebook workspace view model", () => {
         documents,
       ),
     ).toEqual(["document-1"]);
+    expect(resolveEffectiveSelectedDocumentIds([], documents)).toEqual([
+      "document-1",
+      "document-2",
+    ]);
+    expect(resolveEffectiveSelectedDocumentIds(["missing"], documents)).toEqual([
+      "document-1",
+      "document-2",
+    ]);
+    expect(
+      resolveEffectiveSelectedDocumentIds(["document-2"], documents),
+    ).toEqual(["document-2"]);
   });
 
   it("toggles individual and all document selections without retaining stale ids", () => {

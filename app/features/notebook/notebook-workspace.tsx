@@ -21,7 +21,7 @@ import {
   createNotebookSessionFromConversation,
   decorateNotebookSummary,
   inferNotebookTitleFromPrompt,
-  normalizeSelectedDocumentIds,
+  resolveEffectiveSelectedDocumentIds,
   shouldAutoNameNotebook,
   shouldRequestSignIn,
   toErrorMessage,
@@ -270,7 +270,7 @@ export function NotebookWorkspace() {
         conversationId: activeNotebookSession.conversationId,
         notebookId,
         question: activeNotebookSession.question,
-        selectedDocumentIds: normalizedSelectedDocumentIds,
+        selectedDocumentIds: effectiveSelectedDocumentIds,
       });
       if (!request) {
         return;
@@ -315,7 +315,7 @@ export function NotebookWorkspace() {
   const activeNotebookSession = activeNotebookId
     ? (notebookSessions[activeNotebookId] ?? createEmptyNotebookSession())
     : createEmptyNotebookSession();
-  const normalizedSelectedDocumentIds = normalizeSelectedDocumentIds(
+  const effectiveSelectedDocumentIds = resolveEffectiveSelectedDocumentIds(
     activeNotebookSession.selectedDocumentIds,
     currentDocuments,
   );
@@ -476,7 +476,10 @@ export function NotebookWorkspace() {
 
     updateNotebookSession(activeNotebookId, (current) => ({
       selectedDocumentIds: toggleDocumentSelection(
-        current.selectedDocumentIds,
+        resolveEffectiveSelectedDocumentIds(
+          current.selectedDocumentIds,
+          currentDocuments,
+        ),
         documentId,
       ),
     }));
@@ -658,7 +661,7 @@ export function NotebookWorkspace() {
       notebookSearch={notebookSearch}
       notebooks={notebooks}
       question={activeNotebookSession.question}
-      selectedDocumentIds={normalizedSelectedDocumentIds}
+      selectedDocumentIds={effectiveSelectedDocumentIds}
       sourceCountsByNotebookId={sourceCountsByNotebookId}
       statusText={activeNotebookSession.statusText}
     />
