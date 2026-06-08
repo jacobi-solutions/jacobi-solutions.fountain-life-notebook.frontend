@@ -1,5 +1,7 @@
 import {
+  clearNotebookConversation,
   getConversation,
+  getNotebookConversation,
   getStreamAssistantMessageUrl,
   listAssistants,
   type AssistantConversation as GeneratedAssistantConversation,
@@ -31,6 +33,17 @@ export class AssistantService {
     const response = await getConversation({ conversationId });
     assertResponseSuccess(response.data);
     return response.data.conversation;
+  }
+
+  async getNotebookConversation(assistantKey: string, notebookId: string) {
+    const response = await getNotebookConversation(assistantKey, { notebookId });
+    assertResponseSuccess(response.data);
+    return response.data.conversation;
+  }
+
+  async clearNotebookConversation(assistantKey: string, notebookId: string) {
+    const response = await clearNotebookConversation(assistantKey, { notebookId });
+    assertResponseSuccess(response.data);
   }
 
   streamMessage(

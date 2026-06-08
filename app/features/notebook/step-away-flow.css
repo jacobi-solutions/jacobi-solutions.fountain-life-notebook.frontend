@@ -445,6 +445,18 @@
   pointer-events: none;
 }
 
+.step-away-release.nature-only {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(48, 31, 24, 0.18),
+      rgba(48, 31, 24, 0.06) 42%,
+      rgba(48, 31, 24, 0.24)
+    ),
+    url("/wellness/step-away-nature.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #d89468 0%, #b97860 48%, #674438 100%);
+}
+
 .step-away-release-message {
   margin: 0;
   color: #fff8e8;

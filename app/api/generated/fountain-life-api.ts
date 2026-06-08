@@ -146,6 +146,29 @@ export interface GetAssistantConversationResponse {
   conversation: AssistantConversation;
 }
 
+export interface GetNotebookConversationRequest {
+  correlationId?: string;
+  notebookId: string;
+}
+
+export interface GetNotebookConversationResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+  conversation?: AssistantConversation;
+}
+
+export interface ClearNotebookConversationRequest {
+  correlationId?: string;
+  notebookId: string;
+}
+
+export interface BaseResponse {
+  correlationId?: string;
+  errors: ErrorInfo[];
+  isSuccess: boolean;
+}
+
 export interface SendAssistantMessageRequest {
   correlationId?: string;
   message: string;
@@ -276,12 +299,6 @@ export interface DeleteDocumentRequest {
   correlationId?: string;
   documentId: string;
   notebookId: string;
-}
-
-export interface BaseResponse {
-  correlationId?: string;
-  errors: ErrorInfo[];
-  isSuccess: boolean;
 }
 
 export interface ListNotebooksRequest {
@@ -569,6 +586,74 @@ export const getConversation = async (getAssistantConversationRequest: GetAssist
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(getAssistantConversationRequest)
+  }
+);}
+
+
+
+export type getNotebookConversationResponse200 = {
+  data: GetNotebookConversationResponse
+  status: 200
+}
+
+export type getNotebookConversationResponseSuccess = (getNotebookConversationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getNotebookConversationResponse = (getNotebookConversationResponseSuccess)
+
+export const getGetNotebookConversationUrl = (assistantKey: string,) => {
+
+
+
+
+  return `/assistants/${assistantKey}/get-notebook-conversation`
+}
+
+export const getNotebookConversation = async (assistantKey: string,
+    getNotebookConversationRequest: GetNotebookConversationRequest, options?: RequestInit): Promise<getNotebookConversationResponse> => {
+
+  return generatedApiClient<getNotebookConversationResponse>(getGetNotebookConversationUrl(assistantKey),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(getNotebookConversationRequest)
+  }
+);}
+
+
+
+export type clearNotebookConversationResponse200 = {
+  data: BaseResponse
+  status: 200
+}
+
+export type clearNotebookConversationResponseSuccess = (clearNotebookConversationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clearNotebookConversationResponse = (clearNotebookConversationResponseSuccess)
+
+export const getClearNotebookConversationUrl = (assistantKey: string,) => {
+
+
+
+
+  return `/assistants/${assistantKey}/clear-notebook-conversation`
+}
+
+export const clearNotebookConversation = async (assistantKey: string,
+    clearNotebookConversationRequest: ClearNotebookConversationRequest, options?: RequestInit): Promise<clearNotebookConversationResponse> => {
+
+  return generatedApiClient<clearNotebookConversationResponse>(getClearNotebookConversationUrl(assistantKey),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(clearNotebookConversationRequest)
   }
 );}
 

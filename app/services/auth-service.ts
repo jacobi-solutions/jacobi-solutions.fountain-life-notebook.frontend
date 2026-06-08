@@ -11,6 +11,7 @@ type Listener = () => void;
 
 export class AuthService {
   private readonly config: AppConfig;
+  private readonly homePageRedirectUri: string;
   private readonly listeners = new Set<Listener>();
   private readonly manager: UserManager | null;
   private snapshot: AuthSnapshot = {
@@ -21,13 +22,14 @@ export class AuthService {
 
   constructor(config: AppConfig) {
     this.config = config;
+    this.homePageRedirectUri = toHomePageRedirectUri(config.cognitoRedirectUri);
     this.manager =
       config.authMode === "cognito" && config.cognitoAuthority && config.cognitoClientId
         ? new UserManager({
             authority: config.cognitoAuthority,
             client_id: config.cognitoClientId,
             redirect_uri: config.cognitoRedirectUri,
-            post_logout_redirect_uri: config.cognitoRedirectUri,
+            post_logout_redirect_uri: this.homePageRedirectUri,
             response_type: "code",
             scope: "openid email profile",
           })
@@ -111,6 +113,7 @@ export class AuthService {
   async signOut() {
     if (this.config.authMode === "local") {
       this.setSnapshot({ email: null, status: "signed-out", subject: null });
+      this.redirectToHomePage();
       return;
     }
 
@@ -120,6 +123,14 @@ export class AuthService {
     }
 
     await this.manager.signoutRedirect();
+  }
+
+  private redirectToHomePage() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.location.assign(this.homePageRedirectUri);
   }
 
   private async loadUser() {
@@ -145,5 +156,13 @@ export class AuthService {
     for (const listener of this.listeners) {
       listener();
     }
+  }
+}
+
+function toHomePageRedirectUri(redirectUri: string) {
+  try {
+    return new URL("/", redirectUri).toString();
+  } catch {
+    return "/";
   }
 }

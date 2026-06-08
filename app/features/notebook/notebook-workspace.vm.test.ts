@@ -5,6 +5,7 @@ import {
   addSelectedDocumentId,
   appendThreadUpdate,
   createEmptyNotebookSession,
+  createNotebookSessionFromConversation,
   createNotebookEditorDraft,
   createNotebookQuestionRequest,
   decorateNotebookSummary,
@@ -25,9 +26,26 @@ import {
 
 describe("notebook workspace view model", () => {
   it("formats auth status and identifies signed-out actions", () => {
-    expect(formatAuthStatus("signed-out")).toBe("Signed out");
-    expect(formatAuthStatus("authenticated")).toBe("Signed in");
-    expect(formatAuthStatus("loading")).toBe("Checking sign in");
+    expect(formatAuthStatus({ email: null, status: "signed-out", subject: null })).toBe(
+      "Signed out",
+    );
+    expect(
+      formatAuthStatus({
+        email: "shanedrye@gmail.com",
+        status: "authenticated",
+        subject: "cognito-user",
+      }),
+    ).toBe("shanedrye");
+    expect(
+      formatAuthStatus({
+        email: "local.user@fountainlife.local",
+        status: "authenticated",
+        subject: "local-user",
+      }),
+    ).toBe("local-user");
+    expect(formatAuthStatus({ email: null, status: "loading", subject: null })).toBe(
+      "Checking sign in",
+    );
     expect(shouldRequestSignIn("signed-out")).toBe(true);
     expect(shouldRequestSignIn("authenticated")).toBe(false);
     expect(shouldRequestSignIn("loading")).toBe(false);
@@ -108,6 +126,55 @@ describe("notebook workspace view model", () => {
 
     expect(appendThreadUpdate([], statusUpdate)).toEqual([]);
     expect(appendThreadUpdate([], messageUpdate)).toEqual([messageUpdate]);
+  });
+
+  it("hydrates visible chat from a persisted notebook conversation", () => {
+    expect(
+      createNotebookSessionFromConversation(
+        {
+          assistantKey: "notebook",
+          createdDateUtc: "2026-01-01T00:00:00.000Z",
+          id: "conversation-1",
+          lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+          messages: [
+            {
+              createdDateUtc: "2026-01-01T00:00:00.000Z",
+              id: "message-1",
+              role: "user",
+              text: "What changed?",
+            },
+            {
+              createdDateUtc: "2026-01-01T00:00:01.000Z",
+              id: "message-2",
+              role: "tool",
+              text: "Internal retrieval detail.",
+            },
+            {
+              createdDateUtc: "2026-01-01T00:00:02.000Z",
+              id: "message-3",
+              role: "system",
+              text: "Internal system instruction.",
+            },
+          ],
+          participants: [],
+        },
+        ["document-1"],
+      ),
+    ).toEqual({
+      conversationId: "conversation-1",
+      messages: [
+        {
+          citations: undefined,
+          conversationId: "conversation-1",
+          messageId: "message-1",
+          role: "user",
+          text: "What changed?",
+          type: "message",
+        },
+      ],
+      question: "",
+      selectedDocumentIds: ["document-1"],
+    });
   });
 
   it("normalizes unknown errors to an optional fallback message", () => {

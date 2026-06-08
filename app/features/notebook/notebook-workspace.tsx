@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
 import {
+  ASSISTANT_CONVERSATION_QUERY_KEY,
   DOCUMENT_DETAIL_QUERY_KEY,
   DOCUMENTS_QUERY_KEY,
   DOCUMENT_UPLOAD_ERROR_MESSAGE,
@@ -17,6 +18,7 @@ import {
   createNotebookEditorDraft,
   createNotebookInviteDraft,
   createNotebookQuestionRequest,
+  createNotebookSessionFromConversation,
   decorateNotebookSummary,
   inferNotebookTitleFromPrompt,
   normalizeSelectedDocumentIds,
@@ -104,6 +106,17 @@ export function NotebookWorkspace() {
       Boolean(activeDocumentId),
     queryFn: () => documents.viewDocument(activeDocumentId!, activeNotebookId!),
     queryKey: [DOCUMENT_DETAIL_QUERY_KEY, activeNotebookId, activeDocumentId],
+  });
+
+  const notebookConversationQuery = useQuery({
+    enabled: authState.status === "authenticated" && Boolean(activeNotebookId),
+    queryFn: () =>
+      assistant.getNotebookConversation(NOTEBOOK_ASSISTANT_KEY, activeNotebookId!),
+    queryKey: [
+      ...ASSISTANT_CONVERSATION_QUERY_KEY,
+      NOTEBOOK_ASSISTANT_KEY,
+      activeNotebookId,
+    ],
   });
 
   const createNotebookMutation = useMutation({
@@ -220,6 +233,32 @@ export function NotebookWorkspace() {
     },
   });
 
+  const clearNotebookConversationMutation = useMutation({
+    mutationFn: (notebookId: string) =>
+      assistant.clearNotebookConversation(NOTEBOOK_ASSISTANT_KEY, notebookId),
+    onMutate: async (notebookId) => {
+      const queryKey = [
+        ...ASSISTANT_CONVERSATION_QUERY_KEY,
+        NOTEBOOK_ASSISTANT_KEY,
+        notebookId,
+      ];
+      await queryClient.cancelQueries({ queryKey });
+      const previousConversation = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, undefined);
+      return { previousConversation, queryKey };
+    },
+    onError: (_error, _notebookId, context) => {
+      if (context) {
+        queryClient.setQueryData(context.queryKey, context.previousConversation);
+      }
+    },
+    onSuccess: async (_result, _notebookId, context) => {
+      if (context) {
+        await queryClient.invalidateQueries({ queryKey: context.queryKey });
+      }
+    },
+  });
+
   const askMutation = useMutation({
     mutationFn: async () => {
       const notebookId = activeNotebookId;
@@ -280,6 +319,85 @@ export function NotebookWorkspace() {
     activeNotebookSession.selectedDocumentIds,
     currentDocuments,
   );
+
+  useEffect(() => {
+    if (!activeNotebookId || !notebookConversationQuery.isSuccess) {
+      return;
+    }
+
+    setNotebookSessions((current) => {
+      const currentSession =
+        current[activeNotebookId] ?? createEmptyNotebookSession();
+      const persistedConversation = notebookConversationQuery.data;
+
+      if (!persistedConversation && current[activeNotebookId]) {
+        return current;
+      }
+
+      const persistedMessageIds = createNotebookSessionFromConversation(
+        persistedConversation,
+      ).messages.map((message) => message.messageId);
+      const currentMessageIds = currentSession.messages
+        .filter((message) => message.type === "message")
+        .map((message) => message.messageId);
+      const hasSamePersistedMessages = persistedMessageIds.every(
+        (messageId, index) => currentMessageIds[index] === messageId,
+      );
+
+      if (
+        persistedConversation &&
+        currentSession.conversationId === persistedConversation.id &&
+        currentMessageIds.length >= persistedMessageIds.length &&
+        hasSamePersistedMessages
+      ) {
+        return current;
+      }
+
+      const selectedDocumentIds =
+        currentSession.selectedDocumentIds.length > 0
+          ? currentSession.selectedDocumentIds
+          : currentDocuments.map((document) => document.id);
+      const hydratedSession = createNotebookSessionFromConversation(
+        persistedConversation,
+        selectedDocumentIds,
+      );
+
+      return {
+        ...current,
+        [activeNotebookId]: {
+          ...hydratedSession,
+          question: currentSession.question,
+          statusText: currentSession.statusText,
+        },
+      };
+    });
+  }, [
+    activeNotebookId,
+    currentDocuments,
+    notebookConversationQuery.data,
+    notebookConversationQuery.isSuccess,
+  ]);
+
+  useEffect(() => {
+    if (!activeNotebookId || currentDocuments.length === 0) {
+      return;
+    }
+
+    setNotebookSessions((current) => {
+      if (current[activeNotebookId]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeNotebookId]: {
+          ...createEmptyNotebookSession(),
+          selectedDocumentIds: currentDocuments.map((document) => document.id),
+        },
+      };
+    });
+  }, [activeNotebookId, currentDocuments]);
+
   const sourceCountsByNotebookId = Object.fromEntries(
     notebooks.map((notebook) => [
       notebook.id,
@@ -348,7 +466,11 @@ export function NotebookWorkspace() {
   }
 
   function toggleDocument(documentId: string) {
-    if (!activeNotebookId) {
+    if (
+      !activeNotebookId ||
+      askMutation.isPending ||
+      clearNotebookConversationMutation.isPending
+    ) {
       return;
     }
 
@@ -378,11 +500,19 @@ export function NotebookWorkspace() {
       return;
     }
 
-    updateNotebookSession(activeNotebookId, () => ({
+    const notebookId = activeNotebookId;
+    const previousSession =
+      notebookSessions[notebookId] ?? createEmptyNotebookSession();
+    updateNotebookSession(notebookId, () => ({
       conversationId: undefined,
       messages: [],
       statusText: undefined,
     }));
+    clearNotebookConversationMutation.mutate(notebookId, {
+      onError: () => {
+        updateNotebookSession(notebookId, () => previousSession);
+      },
+    });
   }
 
   function changeQuestion(question: string) {
@@ -516,6 +646,7 @@ export function NotebookWorkspace() {
             updateNotebookMutation.error ??
             deleteNotebookMutation.error ??
             inviteNotebookMemberMutation.error ??
+            clearNotebookConversationMutation.error ??
             uploadMutation.error ??
             deleteMutation.error ??
             askMutation.error,

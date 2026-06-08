@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import type {
   NotebookInviteDraft,
@@ -16,21 +16,25 @@ import { StepAwayFlow } from "./step-away-flow";
 
 const STUDIO_ACTIONS = [
   "Audio Overview",
-  "Slide Deck",
-  "Mind Map",
-  "Reports",
-  "Flashcards",
-  "Quiz",
-  "Data Table",
+  "Ask a doctor",
+  "Visit prep brief",
+  "Source guide",
+  "Compare sources",
+  "Timeline",
+  "Follow-ups",
+  "Learning mode",
 ];
 
-const WORKING_FEATURES = [
-  "Upload PDF, TXT, or Markdown source files.",
-  "Ask Zori questions across uploaded sources.",
-  "Select, clear, and delete source documents.",
-  "Create, rename, and delete notebooks.",
-  "Start a fresh chat thread inside a notebook.",
-];
+const STUDIO_FEATURE_DESCRIPTIONS: Record<string, string> = {
+  "Ask a doctor": "Send a source-grounded question and AI draft for clinician review.",
+  "Audio Overview": "Generate a short spoken walkthrough of the selected sources.",
+  "Compare sources": "Highlight what agrees, conflicts, or changed across documents.",
+  "Follow-ups": "Extract recommended next steps and questions to track.",
+  "Learning mode": "Explain medical terms from these files in plain language.",
+  "Source guide": "Create a quick guide to what each uploaded file contains.",
+  "Timeline": "Arrange findings, visits, labs, and reports in date order.",
+  "Visit prep brief": "Build a concise summary and agenda for an upcoming visit.",
+};
 
 const APP_VERSION = `v${__APP_VERSION__}`;
 const INVITE_ROLES: NotebookInviteDraft["role"][] = [
@@ -43,7 +47,7 @@ const INTERACTIVE_SELECTOR =
 const AUTH_BYPASS_SELECTOR = "[data-auth-bypass='true']";
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
-  const authStatusLabel = formatAuthStatus(model.authState.status);
+  const authStatusLabel = formatAuthStatus(model.authState);
   const requiresSignIn = shouldRequestSignIn(model.authState.status);
 
   function requestSignInForSignedOutAction(event: MouseEvent<HTMLElement>) {
@@ -126,7 +130,22 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <div>
             <p className="notebook-eyebrow">Member intelligence notebook</p>
             {model.activeNotebook ? (
-              <h1>{model.activeNotebook.title}</h1>
+              <h1
+                role="button"
+                tabIndex={0}
+                aria-label={`Rename ${model.activeNotebook.title}`}
+                onClick={() => model.onEditNotebook(model.activeNotebook!.id)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  model.onEditNotebook(model.activeNotebook!.id);
+                }}
+              >
+                {model.activeNotebook.title}
+              </h1>
             ) : (
               <h1>
                 Detect. Prevent. <em>Reverse.</em>
@@ -138,6 +157,15 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
             {authStatusLabel}
           </span>
+          {model.activeNotebook?.role === "owner" ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={model.onStartInviteMember}
+            >
+              Add user
+            </button>
+          ) : null}
           {model.authState.status === "authenticated" ? (
             <button
               type="button"
@@ -333,13 +361,16 @@ function NotebookCard({
 function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   const [activeWorkspaceSection, setActiveWorkspaceSection] =
     useState("notebook-sources");
+  const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const selectedCount = model.selectedDocumentIds.length;
   const allDocumentsSelected =
     model.documents.length > 0 && selectedCount === model.documents.length;
   const isViewingDocument = Boolean(model.activeDocumentId);
-  const canInviteMembers = model.activeNotebook?.role === "owner";
   const requiresSignIn = shouldRequestSignIn(model.authState.status);
   const isAuthLoading = model.authState.status === "loading";
+  const chatContextLabel = model.conversationId
+    ? "Active thread"
+    : (model.activeNotebook?.category ?? "New thread");
   const canAsk =
     model.authState.status === "authenticated" &&
     model.question.trim().length > 0 &&
@@ -359,6 +390,16 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
     setActiveWorkspaceSection(sectionId);
   }
 
+  useLayoutEffect(() => {
+    const questionInput = questionInputRef.current;
+    if (!questionInput) {
+      return;
+    }
+
+    questionInput.style.height = "auto";
+    questionInput.style.height = `${questionInput.scrollHeight}px`;
+  }, [model.question]);
+
   return (
     <>
       <section className="notebook-actionbar" aria-label="Notebook actions">
@@ -369,24 +410,6 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         >
           All notebooks
         </button>
-        {model.activeNotebook ? (
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => model.onEditNotebook(model.activeNotebook!.id)}
-          >
-            Rename
-          </button>
-        ) : null}
-        {canInviteMembers ? (
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={model.onStartInviteMember}
-          >
-            Add user
-          </button>
-        ) : null}
         <button type="button" onClick={model.onCreateNotebook}>
           + Create notebook
         </button>
@@ -467,21 +490,6 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
               <p>Sources</p>
               <h2>Member documents</h2>
             </div>
-            <button
-              type="button"
-              className="ghost-button compact-button"
-              disabled={isAuthLoading || model.documents.length === 0}
-              onClick={() => {
-                if (requiresSignIn) {
-                  model.onSignIn();
-                  return;
-                }
-
-                model.onToggleEveryDocument();
-              }}
-            >
-              {allDocumentsSelected ? "Clear" : "Select all"}
-            </button>
           </div>
 
           <label className="upload-target">
@@ -526,6 +534,26 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             <p className="inline-error">{model.documentsError}</p>
           ) : null}
 
+          {model.documents.length > 0 ? (
+            <label className="document-select-all">
+              <input
+                aria-label="Select all documents"
+                checked={allDocumentsSelected}
+                disabled={isAuthLoading}
+                type="checkbox"
+                onChange={() => {
+                  if (requiresSignIn) {
+                    model.onSignIn();
+                    return;
+                  }
+
+                  model.onToggleEveryDocument();
+                }}
+              />
+              <span>Select all</span>
+            </label>
+          ) : null}
+
           <div className="document-list" aria-busy={model.isDocumentsLoading}>
             {model.documents.length === 0 ? (
               <p className="empty-state">
@@ -538,44 +566,42 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                 const isSelected = model.selectedDocumentIds.includes(
                   document.id,
                 );
-                const isOpen = model.activeDocumentId === document.id;
                 const isDeletingThisDocument =
                   model.isDeleting && model.deleteDocumentId === document.id;
 
                 return (
                   <article
-                    className={`document-row ${isSelected ? "selected" : ""} ${isOpen ? "open" : ""}`}
+                    className={`document-row ${isSelected ? "selected" : ""}`}
                     key={document.id}
                   >
-                    <label>
+                    <label className="document-row-select">
                       <input
+                        aria-label={`Select ${document.originalFileName}`}
                         checked={isSelected}
                         type="checkbox"
-                        onChange={() => model.onToggleDocument(document.id)}
-                      />
-                      <span>
-                        <strong>{document.originalFileName}</strong>
-                        <small>
-                          {formatBytes(document.byteSize)} /{" "}
-                          {document.chunkCount} chunks
-                        </small>
-                      </span>
-                    </label>
-                    <div className="document-row-actions">
-                      <button
-                        type="button"
-                        className="ghost-button compact-button"
-                        aria-current={isOpen ? "true" : undefined}
-                        onClick={() => {
-                          model.onOpenDocument(document.id);
-                          showWorkspaceSection("notebook-chat");
+                        onChange={() => {
+                          if (requiresSignIn) {
+                            model.onSignIn();
+                            return;
+                          }
+
+                          model.onToggleDocument(document.id);
                         }}
-                      >
-                        {isOpen ? "Reading" : "View"}
-                      </button>
+                      />
+                    </label>
+                    <div className="document-row-copy">
+                      <strong title={document.originalFileName}>
+                        {document.originalFileName}
+                      </strong>
+                      <small>{formatBytes(document.byteSize)}</small>
+                    </div>
+                    <details className="document-row-menu">
+                      <summary aria-label={`Source actions for ${document.originalFileName}`}>
+                        <span aria-hidden="true">⋮</span>
+                      </summary>
                       <button
                         type="button"
-                        className="ghost-button danger-button compact-button"
+                        className="document-menu-item danger-button"
                         disabled={isAuthLoading || isDeletingThisDocument}
                         onClick={() => {
                           if (requiresSignIn) {
@@ -588,7 +614,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                       >
                         {isDeletingThisDocument ? "Deleting" : "Delete"}
                       </button>
-                    </div>
+                    </details>
                   </article>
                 );
               })
@@ -609,9 +635,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
               <p>
                 {isViewingDocument
                   ? (model.activeDocument?.originalFileName ?? "Opening source")
-                  : (model.conversationId ??
-                    model.activeNotebook?.category ??
-                    "New thread")}
+                  : chatContextLabel}
               </p>
               <h2>{isViewingDocument ? "Document" : "Chat"}</h2>
             </div>
@@ -639,7 +663,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             <DocumentReader model={model} />
           ) : (
             <div className="message-list" aria-live="polite">
-              {model.messages.length === 0 ? (
+              {model.messages.length === 0 && model.documents.length === 0 ? (
                 <div className="empty-state tall-empty notebook-empty-workspace">
                   <strong>Create a clinical overview from your sources</strong>
                   <span>
@@ -664,6 +688,10 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                     </label>
                   </div>
                 </div>
+              ) : model.messages.length === 0 ? (
+                <p className="empty-state chat-empty-hint">
+                  Ask questions here about your files.
+                </p>
               ) : (
                 model.messages.map((message, index) => (
                   <article
@@ -709,6 +737,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           {isViewingDocument ? null : (
             <form className="question-box" onSubmit={submitQuestion}>
               <textarea
+                ref={questionInputRef}
                 value={model.question}
                 placeholder={
                   selectedCount > 0
@@ -840,6 +869,10 @@ function UnavailableFeatureNotice({
 }: {
   model: NotebookWorkspaceModel;
 }) {
+  const featureDescription =
+    STUDIO_FEATURE_DESCRIPTIONS[model.activeUnavailableFeature ?? ""] ??
+    "This planned feature will create a source-grounded output from the selected files.";
+
   return (
     <section
       className="unavailable-feature-popover"
@@ -848,14 +881,13 @@ function UnavailableFeatureNotice({
     >
       <div>
         <p>{model.activeUnavailableFeature}</p>
-        <strong>Sorry. This feature is not implemented yet.</strong>
+        <strong>{featureDescription}</strong>
       </div>
-      <span>Please try one of the working features:</span>
-      <ul>
-        {WORKING_FEATURES.map((feature) => (
-          <li key={feature}>{feature}</li>
-        ))}
-      </ul>
+      <span>This feature is not implemented yet.</span>
+      <span>
+        For now, try uploading documents, asking questions about them, deleting
+        documents, or adding users.
+      </span>
       <button
         type="button"
         className="ghost-button compact-button"

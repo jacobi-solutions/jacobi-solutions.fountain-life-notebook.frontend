@@ -5,7 +5,9 @@ import { AssistantService } from "./assistant-service";
 import { NOTEBOOK_ASSISTANT_KEY } from "../features/notebook/notebook.constants";
 
 vi.mock("../api/generated/fountain-life-api", () => ({
+  clearNotebookConversation: vi.fn(),
   getConversation: vi.fn(),
+  getNotebookConversation: vi.fn(),
   getStreamAssistantMessageUrl: vi.fn((assistantKey: string) => `/assistants/${assistantKey}/stream-message`),
   listAssistants: vi.fn(),
 }));
@@ -101,5 +103,55 @@ describe("AssistantService", () => {
     expect(generatedApi.getConversation).toHaveBeenCalledWith({
       conversationId: "conversation-1",
     });
+  });
+
+  it("loads a notebook conversation", async () => {
+    const conversation = {
+      assistantKey: NOTEBOOK_ASSISTANT_KEY,
+      createdDateUtc: "2026-01-01T00:00:00.000Z",
+      id: "conversation-1",
+      lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
+      messages: [],
+      participants: [],
+    };
+    vi.mocked(generatedApi.getNotebookConversation).mockResolvedValue({
+      data: {
+        conversation,
+        errors: [],
+        isSuccess: true,
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const api = {} as unknown as ApiClient;
+    const service = new AssistantService(api);
+
+    await expect(
+      service.getNotebookConversation(NOTEBOOK_ASSISTANT_KEY, "notebook-1"),
+    ).resolves.toEqual(conversation);
+    expect(generatedApi.getNotebookConversation).toHaveBeenCalledWith(
+      NOTEBOOK_ASSISTANT_KEY,
+      { notebookId: "notebook-1" },
+    );
+  });
+
+  it("clears a notebook conversation", async () => {
+    vi.mocked(generatedApi.clearNotebookConversation).mockResolvedValue({
+      data: {
+        errors: [],
+        isSuccess: true,
+      },
+      headers: new Headers(),
+      status: 200,
+    });
+    const api = {} as unknown as ApiClient;
+    const service = new AssistantService(api);
+
+    await service.clearNotebookConversation(NOTEBOOK_ASSISTANT_KEY, "notebook-1");
+
+    expect(generatedApi.clearNotebookConversation).toHaveBeenCalledWith(
+      NOTEBOOK_ASSISTANT_KEY,
+      { notebookId: "notebook-1" },
+    );
   });
 });

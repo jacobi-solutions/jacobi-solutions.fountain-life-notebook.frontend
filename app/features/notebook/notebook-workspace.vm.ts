@@ -1,4 +1,5 @@
 import type {
+  AssistantConversation,
   AssistantThreadUpdate,
   SendAssistantMessageRequest,
 } from "../../services/assistant-service";
@@ -33,10 +34,10 @@ export function shouldRequestSignIn(status: AuthSnapshot["status"]) {
   return status === "signed-out";
 }
 
-export function formatAuthStatus(status: AuthSnapshot["status"]) {
-  switch (status) {
+export function formatAuthStatus(authState: AuthSnapshot) {
+  switch (authState.status) {
     case "authenticated":
-      return "Signed in";
+      return getAuthenticatedDisplayName(authState) ?? "Signed in";
     case "loading":
       return "Checking sign in";
     case "signed-out":
@@ -44,11 +45,50 @@ export function formatAuthStatus(status: AuthSnapshot["status"]) {
   }
 }
 
+function getAuthenticatedDisplayName(authState: AuthSnapshot) {
+  const emailName = authState.email?.split("@")[0]?.trim();
+
+  if (authState.email?.endsWith(".local") && authState.subject) {
+    return authState.subject;
+  }
+
+  return emailName || authState.subject;
+}
+
 export function createEmptyNotebookSession(): NotebookSessionState {
   return {
     messages: [],
     question: "",
     selectedDocumentIds: [],
+  };
+}
+
+export function createNotebookSessionFromConversation(
+  conversation: AssistantConversation | undefined,
+  selectedDocumentIds: string[] = [],
+): NotebookSessionState {
+  return {
+    ...createEmptyNotebookSession(),
+    conversationId: conversation?.id,
+    messages: conversation
+      ? conversation.messages.flatMap((message) => {
+          if (!isThreadMessageRole(message.role)) {
+            return [];
+          }
+
+          return [
+            {
+              citations: message.citations,
+              conversationId: conversation.id,
+              messageId: message.id,
+              role: message.role,
+              text: message.text,
+              type: "message" as const,
+            },
+          ];
+        })
+      : [],
+    selectedDocumentIds,
   };
 }
 
@@ -230,6 +270,12 @@ function hashString(value: string) {
     (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
     0,
   );
+}
+
+function isThreadMessageRole(
+  role: AssistantConversation["messages"][number]["role"],
+): role is AssistantThreadUpdate["role"] {
+  return role === "assistant" || role === "user";
 }
 
 const COMMON_TITLE_WORDS = new Set([

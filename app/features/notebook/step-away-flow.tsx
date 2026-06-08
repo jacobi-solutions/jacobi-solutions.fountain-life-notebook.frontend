@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   getBreathingDurationMs,
   getBreathingSnapshot,
@@ -71,7 +72,7 @@ const RELEASE_MESSAGES: ReleaseMessage[] = [
     ),
   },
   {
-    text: "Now take a break from the screen. Go outside if you can and relax a little.",
+    text: "Now take a break from the screen. Go outside for a few minutes if you can.",
   },
 ];
 
@@ -427,7 +428,7 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
         </aside>
       ) : null}
 
-      {stage === "acknowledgment" ? (
+      {stage === "acknowledgment" ? renderStepAwayOverlay(
         <div className="step-away-acknowledgment-backdrop">
           <div
             ref={acknowledgmentRef}
@@ -459,17 +460,17 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
       ) : null}
 
-      {shouldShowNatureBed ? (
+      {shouldShowNatureBed ? renderStepAwayOverlay(
         <div
           className={`step-away-nature-bed ${isExitingFlow ? "exiting" : ""}`}
           aria-hidden="true"
-        />
+        />,
       ) : null}
 
-      {stage === "breathing" || stage === "continuedBreathing" ? (
+      {stage === "breathing" || stage === "continuedBreathing" ? renderStepAwayOverlay(
         <section
           className={`step-away-takeover ${stepAwayCycleClass} ${stage === "continuedBreathing" ? "continued" : ""} ${breathingSnapshot.isDissolving ? "dissolving" : ""} ${isExitingFlow ? "exiting" : ""}`}
           role="dialog"
@@ -522,10 +523,10 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
               </button>
             ) : null}
           </div>
-        </section>
+        </section>,
       ) : null}
 
-      {stage === "releasePending" ? (
+      {stage === "releasePending" ? renderStepAwayOverlay(
         <section
           className={`step-away-takeover release-pending ${stepAwayCycleClass}`}
           role="dialog"
@@ -554,10 +555,10 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
               {breathingSnapshot.totalCycles}
             </p>
           </div>
-        </section>
+        </section>,
       ) : null}
 
-      {stage === "release" ? (
+      {stage === "release" ? renderStepAwayOverlay(
         <section
           className={`step-away-release ${isNatureOnlyRelease ? "nature-only" : ""} ${isExitingFlow ? "exiting" : ""}`}
           role="dialog"
@@ -608,10 +609,10 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
               </button>
             </div>
           ) : null}
-        </section>
+        </section>,
       ) : null}
 
-      {stage === "continuedComplete" ? (
+      {stage === "continuedComplete" ? renderStepAwayOverlay(
         <section
           className={`step-away-release ${isExitingFlow ? "exiting" : ""}`}
           role="dialog"
@@ -634,10 +635,18 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
           >
             Return to my documents
           </button>
-        </section>
+        </section>,
       ) : null}
     </>
   );
+}
+
+function renderStepAwayOverlay(content: ReactNode) {
+  if (typeof document === "undefined") {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }
 
 function DissolutionLayer({

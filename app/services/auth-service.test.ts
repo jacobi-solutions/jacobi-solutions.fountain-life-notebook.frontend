@@ -1,8 +1,38 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthService } from "./auth-service";
 import type { AppConfig } from "../core/app-config";
 
+const userManagerSettings = vi.hoisted(() => [] as unknown[]);
+
+vi.mock("oidc-client-ts", () => ({
+  UserManager: vi.fn(function MockUserManager(this: {
+    events: {
+      addUserLoaded: ReturnType<typeof vi.fn>;
+      addUserUnloaded: ReturnType<typeof vi.fn>;
+    };
+    getUser: ReturnType<typeof vi.fn>;
+    signinRedirect: ReturnType<typeof vi.fn>;
+    signinRedirectCallback: ReturnType<typeof vi.fn>;
+    signoutRedirect: ReturnType<typeof vi.fn>;
+  }, settings: unknown) {
+    userManagerSettings.push(settings);
+    this.events = {
+      addUserLoaded: vi.fn(),
+      addUserUnloaded: vi.fn(),
+    };
+    this.getUser = vi.fn().mockResolvedValue(null);
+    this.signinRedirect = vi.fn();
+    this.signinRedirectCallback = vi.fn();
+    this.signoutRedirect = vi.fn();
+  }),
+}));
+
 describe("AuthService", () => {
+  afterEach(() => {
+    userManagerSettings.length = 0;
+    vi.unstubAllGlobals();
+  });
+
   it("starts authenticated in local mode and returns local identity headers", async () => {
     const auth = new AuthService({
       ...baseConfig,
@@ -39,6 +69,36 @@ describe("AuthService", () => {
       email: "local.user@fountainlife.local",
       status: "authenticated",
       subject: "local-user",
+    });
+  });
+
+  it("redirects local sign out to the home page", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", { location: { assign } });
+    const auth = new AuthService({
+      ...baseConfig,
+      authMode: "local",
+      cognitoRedirectUri: "https://app.example.com/auth/callback",
+    });
+
+    await auth.signOut();
+
+    expect(assign).toHaveBeenCalledWith("https://app.example.com/");
+  });
+
+  it("configures Cognito sign out to return to the home page", () => {
+    new AuthService({
+      ...baseConfig,
+      authMode: "cognito",
+      cognitoAuthority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
+      cognitoClientId: "client-id",
+      cognitoRedirectUri: "https://app.example.com/auth/callback",
+    });
+
+    expect(userManagerSettings).toHaveLength(1);
+    expect(userManagerSettings[0]).toMatchObject({
+      redirect_uri: "https://app.example.com/auth/callback",
+      post_logout_redirect_uri: "https://app.example.com/",
     });
   });
 });
