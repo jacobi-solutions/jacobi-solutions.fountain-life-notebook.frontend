@@ -629,6 +629,8 @@
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 14rem);
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 0.9rem;
 }
 
@@ -785,10 +787,10 @@
 
 .document-list {
   display: grid;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   gap: 0.5rem;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   padding-right: 0.15rem;
 }
 
