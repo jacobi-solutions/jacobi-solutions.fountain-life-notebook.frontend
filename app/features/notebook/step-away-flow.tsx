@@ -103,6 +103,12 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
     stage === "breathing" || stage === "releasePending"
       ? `step-away-cycle-${Math.min(breathingSnapshot.cycleIndex + 1, 3)}`
       : "";
+  const shouldShowNatureBed =
+    (stage === "breathing" && breathingSnapshot.cycleIndex >= 2) ||
+    stage === "releasePending" ||
+    stage === "release" ||
+    stage === "continuedBreathing" ||
+    stage === "continuedComplete";
   const fragmentPhase =
     (stage !== "breathing" && stage !== "releasePending") ||
     breathingSnapshot.cycleIndex === 0
@@ -454,6 +460,13 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {shouldShowNatureBed ? (
+        <div
+          className={`step-away-nature-bed ${isExitingFlow ? "exiting" : ""}`}
+          aria-hidden="true"
+        />
       ) : null}
 
       {stage === "breathing" || stage === "continuedBreathing" ? (

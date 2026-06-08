@@ -159,6 +159,27 @@
   color: #41251c;
 }
 
+.step-away-nature-bed {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(48, 31, 24, 0.44),
+      rgba(48, 31, 24, 0.2) 42%,
+      rgba(48, 31, 24, 0.52)
+    ),
+    url("/wellness/step-away-nature.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #d89468 0%, #b97860 48%, #674438 100%);
+  pointer-events: none;
+}
+
+.step-away-nature-bed.exiting {
+  animation: step-away-flow-exit 1.2s ease-in-out both;
+}
+
 .step-away-takeover {
   display: grid;
   place-items: center;
