@@ -15,7 +15,8 @@
     "verify": "scripts/verify.sh",
     "version:major": "npm version major --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
-    "version:patch": "npm version patch --no-git-tag-version"
+    "version:patch": "npm version patch --no-git-tag-version",
+    "setup:local": "scripts/setup-local.sh"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
