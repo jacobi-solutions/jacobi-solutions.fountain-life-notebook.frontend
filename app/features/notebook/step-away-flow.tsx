@@ -23,6 +23,11 @@ interface DissolutionFragment {
   style: CSSProperties & Record<`--${string}`, string>;
 }
 
+type AudioContextConstructor = typeof AudioContext;
+type AudioContextWindow = Window & {
+  webkitAudioContext?: AudioContextConstructor;
+};
+
 const FRAGMENT_COLUMNS = 12;
 const FRAGMENT_ROWS = 9;
 const FRAGMENT_BACKGROUNDS = [
@@ -299,7 +304,7 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
   }
 
   async function startBreathing() {
-    prepareBreathingAudio();
+    await prepareBreathingAudio();
     await enterFullscreen();
     setStage("breathing");
   }
@@ -317,8 +322,16 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
       return;
     }
 
+    if (audioContext.state === "closed") {
+      return;
+    }
+
     if (audioContext.state === "suspended") {
-      await audioContext.resume();
+      try {
+        await audioContext.resume();
+      } catch {
+        return;
+      }
     }
 
     const now = audioContext.currentTime;
@@ -373,13 +386,27 @@ export function StepAwayFlow({ className = "" }: { className?: string }) {
     });
   }
 
-  function prepareBreathingAudio() {
-    if (audioContextRef.current || typeof window.AudioContext === "undefined") {
+  async function prepareBreathingAudio() {
+    const AudioContextClass =
+      window.AudioContext ??
+      (window as AudioContextWindow).webkitAudioContext;
+
+    if (!AudioContextClass) {
       return;
     }
 
-    audioContextRef.current = new window.AudioContext();
-    void audioContextRef.current.resume();
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      try {
+        await audioContextRef.current.resume();
+      } catch {
+        // Some mobile browsers reject audio startup even after a tap.
+        // The breathing flow should still open without sound.
+      }
+    }
   }
 
   async function enterFullscreen() {
