@@ -319,6 +319,7 @@ export interface NotebookSummary {
   lastUpdatedDateUtc: string;
   sourceCount: number;
   title: string;
+  workspaceId: string;
 }
 
 export interface ListNotebooksResponse {
