@@ -43,6 +43,20 @@ export interface RegisterAccountResponse {
   account: AccountSummary;
 }
 
+export type AlertcheckResponseStatus = typeof AlertcheckResponseStatus[keyof typeof AlertcheckResponseStatus];
+
+
+export const AlertcheckResponseStatus = {
+  sent: 'sent',
+} as const;
+
+export interface AlertcheckResponse {
+  messageId: string;
+  name: string;
+  status: AlertcheckResponseStatus;
+  timestamp: string;
+}
+
 export interface ListAssistantsRequest {
   correlationId?: string;
 }
@@ -455,6 +469,39 @@ export const registerCurrentAccount = async (baseRequest: BaseRequest, options?:
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(baseRequest)
+  }
+);}
+
+
+
+export type triggerAlertcheckResponse200 = {
+  data: AlertcheckResponse
+  status: 200
+}
+
+export type triggerAlertcheckResponseSuccess = (triggerAlertcheckResponse200) & {
+  headers: Headers;
+};
+;
+
+export type triggerAlertcheckResponse = (triggerAlertcheckResponseSuccess)
+
+export const getTriggerAlertcheckUrl = () => {
+
+
+
+
+  return `/alertcheck`
+}
+
+export const triggerAlertcheck = async ( options?: RequestInit): Promise<triggerAlertcheckResponse> => {
+
+  return generatedApiClient<triggerAlertcheckResponse>(getTriggerAlertcheckUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 
