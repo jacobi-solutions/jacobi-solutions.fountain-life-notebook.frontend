@@ -11,7 +11,8 @@
     "start": "vite preview --host 0.0.0.0 --outDir build/client",
     "test": "vitest run",
     "typecheck": "react-router typegen && tsc",
-    "verify": "scripts/verify.sh"
+    "verify": "scripts/verify.sh",
+    "setup:local": "scripts/setup-local.sh"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
