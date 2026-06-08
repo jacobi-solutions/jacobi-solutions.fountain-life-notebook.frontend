@@ -12,6 +12,12 @@ const userManagerInstances = vi.hoisted(
       removeUser: ReturnType<typeof vi.fn>;
     }>,
 );
+const removeUserDeferreds = vi.hoisted(
+  () =>
+    [] as Array<{
+      resolve: () => void;
+    }>,
+);
 
 vi.mock("oidc-client-ts", () => ({
   UserManager: vi.fn(function MockUserManager(
@@ -43,7 +49,12 @@ vi.mock("oidc-client-ts", () => ({
           "https://example.auth.us-east-1.amazoncognito.com/logout",
         ),
     };
-    this.removeUser = vi.fn().mockResolvedValue(undefined);
+    this.removeUser = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          removeUserDeferreds.push({ resolve });
+        }),
+    );
     this.signinRedirect = vi.fn();
     this.signinRedirectCallback = vi.fn();
     userManagerInstances.push(this);
@@ -54,6 +65,7 @@ describe("AuthService", () => {
   afterEach(() => {
     userManagerSettings.length = 0;
     userManagerInstances.length = 0;
+    removeUserDeferreds.length = 0;
     vi.unstubAllGlobals();
   });
 
@@ -138,7 +150,10 @@ describe("AuthService", () => {
       cognitoRedirectUri: "https://app.example.com/auth/callback",
     });
 
-    await auth.signOut();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const signOutPromise = auth.signOut();
+    await Promise.resolve();
 
     expect(userManagerInstances[0]?.removeUser).toHaveBeenCalledOnce();
     const logoutUrl = new URL(assign.mock.calls[0]?.[0]);
@@ -152,6 +167,8 @@ describe("AuthService", () => {
     );
     expect(logoutUrl.searchParams.get("response_type")).toBe("code");
     expect(logoutUrl.searchParams.get("scope")).toBe("openid email profile");
+    removeUserDeferreds[0]?.resolve();
+    await signOutPromise;
   });
 });
 

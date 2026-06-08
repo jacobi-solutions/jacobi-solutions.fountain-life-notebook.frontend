@@ -13,6 +13,8 @@ export class AuthService {
   private readonly homePageRedirectUri: string;
   private readonly listeners = new Set<Listener>();
   private readonly manager: UserManager | null;
+  private cognitoLogoutUrl?: string;
+  private cognitoLogoutUrlPromise?: Promise<string>;
   private snapshot: AuthSnapshot = {
     email: null,
     status: "loading",
@@ -52,6 +54,7 @@ export class AuthService {
     this.manager.events.addUserUnloaded(() =>
       this.setSnapshot({ email: null, status: "signed-out", subject: null }),
     );
+    this.preloadCognitoLogoutUrl();
 
     void this.loadUser();
   }
@@ -122,9 +125,11 @@ export class AuthService {
       return;
     }
 
-    await this.manager.removeUser();
+    const logoutUrl =
+      this.cognitoLogoutUrl ?? (await this.getCognitoLogoutUrl());
+    void this.manager.removeUser();
     this.setSnapshot({ email: null, status: "signed-out", subject: null });
-    window.location.assign(await this.createCognitoLogoutUrl());
+    window.location.assign(logoutUrl);
   }
 
   private redirectToHomePage() {
@@ -133,6 +138,20 @@ export class AuthService {
     }
 
     window.location.assign(this.homePageRedirectUri);
+  }
+
+  private preloadCognitoLogoutUrl() {
+    void this.getCognitoLogoutUrl().catch(() => undefined);
+  }
+
+  private async getCognitoLogoutUrl() {
+    this.cognitoLogoutUrlPromise ??= this.createCognitoLogoutUrl().then(
+      (url) => {
+        this.cognitoLogoutUrl = url;
+        return url;
+      },
+    );
+    return this.cognitoLogoutUrlPromise;
   }
 
   private async createCognitoLogoutUrl() {
