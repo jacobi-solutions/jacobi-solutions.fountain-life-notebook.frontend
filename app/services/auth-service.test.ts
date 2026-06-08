@@ -6,7 +6,10 @@ const userManagerSettings = vi.hoisted(() => [] as unknown[]);
 const userManagerInstances = vi.hoisted(
   () =>
     [] as Array<{
-      signoutRedirect: ReturnType<typeof vi.fn>;
+      metadataService: {
+        getEndSessionEndpoint: ReturnType<typeof vi.fn>;
+      };
+      removeUser: ReturnType<typeof vi.fn>;
     }>,
 );
 
@@ -18,9 +21,12 @@ vi.mock("oidc-client-ts", () => ({
         addUserUnloaded: ReturnType<typeof vi.fn>;
       };
       getUser: ReturnType<typeof vi.fn>;
+      metadataService: {
+        getEndSessionEndpoint: ReturnType<typeof vi.fn>;
+      };
+      removeUser: ReturnType<typeof vi.fn>;
       signinRedirect: ReturnType<typeof vi.fn>;
       signinRedirectCallback: ReturnType<typeof vi.fn>;
-      signoutRedirect: ReturnType<typeof vi.fn>;
     },
     settings: unknown,
   ) {
@@ -30,9 +36,16 @@ vi.mock("oidc-client-ts", () => ({
       addUserUnloaded: vi.fn(),
     };
     this.getUser = vi.fn().mockResolvedValue(null);
+    this.metadataService = {
+      getEndSessionEndpoint: vi
+        .fn()
+        .mockResolvedValue(
+          "https://example.auth.us-east-1.amazoncognito.com/logout",
+        ),
+    };
+    this.removeUser = vi.fn().mockResolvedValue(undefined);
     this.signinRedirect = vi.fn();
     this.signinRedirectCallback = vi.fn();
-    this.signoutRedirect = vi.fn();
     userManagerInstances.push(this);
   }),
 }));
@@ -113,7 +126,9 @@ describe("AuthService", () => {
     });
   });
 
-  it("sends Cognito hosted UI logout parameters with the workspace return URL", async () => {
+  it("redirects Cognito sign out through the hosted UI logout endpoint", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", { location: { assign } });
     const auth = new AuthService({
       ...baseConfig,
       authMode: "cognito",
@@ -125,12 +140,18 @@ describe("AuthService", () => {
 
     await auth.signOut();
 
-    expect(userManagerInstances[0]?.signoutRedirect).toHaveBeenCalledWith({
-      client_id: "client-id",
-      extraQueryParams: {
-        logout_uri: "https://app.example.com/",
-      },
-    });
+    expect(userManagerInstances[0]?.removeUser).toHaveBeenCalledOnce();
+    const logoutUrl = new URL(assign.mock.calls[0]?.[0]);
+    expect(logoutUrl.origin).toBe(
+      "https://example.auth.us-east-1.amazoncognito.com",
+    );
+    expect(logoutUrl.pathname).toBe("/logout");
+    expect(logoutUrl.searchParams.get("client_id")).toBe("client-id");
+    expect(logoutUrl.searchParams.get("redirect_uri")).toBe(
+      "https://app.example.com/auth/callback",
+    );
+    expect(logoutUrl.searchParams.get("response_type")).toBe("code");
+    expect(logoutUrl.searchParams.get("scope")).toBe("openid email profile");
   });
 });
 

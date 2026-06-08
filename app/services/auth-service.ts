@@ -8,12 +8,6 @@ export interface AuthSnapshot {
 }
 
 type Listener = () => void;
-type CognitoSignoutRedirectArgs = NonNullable<
-  Parameters<UserManager["signoutRedirect"]>[0]
-> & {
-  client_id: string;
-};
-
 export class AuthService {
   private readonly config: AppConfig;
   private readonly homePageRedirectUri: string;
@@ -128,15 +122,9 @@ export class AuthService {
       return;
     }
 
-    // Reaching this branch means the manager was constructed with a non-empty client id.
-    const signOutArgs: CognitoSignoutRedirectArgs = {
-      client_id: this.config.cognitoClientId,
-      extraQueryParams: {
-        logout_uri: this.homePageRedirectUri,
-      },
-    };
-
-    await this.manager.signoutRedirect(signOutArgs);
+    await this.manager.removeUser();
+    this.setSnapshot({ email: null, status: "signed-out", subject: null });
+    window.location.assign(await this.createCognitoLogoutUrl());
   }
 
   private redirectToHomePage() {
@@ -145,6 +133,21 @@ export class AuthService {
     }
 
     window.location.assign(this.homePageRedirectUri);
+  }
+
+  private async createCognitoLogoutUrl() {
+    const endSessionEndpoint =
+      await this.manager!.metadataService.getEndSessionEndpoint();
+    if (!endSessionEndpoint) {
+      throw new Error("Cognito end session endpoint is not configured.");
+    }
+
+    const logoutUrl = new URL(endSessionEndpoint);
+    logoutUrl.searchParams.set("client_id", this.config.cognitoClientId);
+    logoutUrl.searchParams.set("redirect_uri", this.config.cognitoRedirectUri);
+    logoutUrl.searchParams.set("response_type", "code");
+    logoutUrl.searchParams.set("scope", "openid email profile");
+    return logoutUrl.toString();
   }
 
   private async loadUser() {
