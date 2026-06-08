@@ -221,6 +221,7 @@
 }
 
 .step-away-takeover.release-pending::after {
+  animation: none;
   opacity: 1;
 }
 
