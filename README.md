@@ -1,124 +1,217 @@
 # Fountain Life Notebook Frontend
 
-React Router UI for the Fountain Life interview NotebookLM-style app.
+## Project Summary / Repo Layout
 
-## Stack Shape
+Fountain Life Notebook is an interview project split across three repositories:
+a NestJS backend API, a React Router frontend, and Terraform infrastructure for
+the AWS deployment path. The milestone branches preserve the build-out history.
 
-- App shell: React Router SPA served by Vite.
-- Server state: TanStack Query.
-- Service layer: `app/services` owns auth, streaming, and app-specific API orchestration.
-- UI organization: feature containers compose services and query state, view files hold JSX, and `*.vm.ts` files hold testable view-model logic.
-- Contracts: Orval generates callable TypeScript API functions and schemas in `app/api/generated/fountain-life-api.ts`.
-- Auth: local interview mode by default, Cognito OIDC mode available with `VITE_AUTH_MODE=cognito`.
-- API client: generated API functions use `app/api/generated-api-client.ts` for base URL and auth header injection. `ApiClient` remains for SSE streaming.
-
-## Local Setup
-
-### Option A: One Command With Docker
-
-The backend repo includes a local Docker Compose file that starts MongoDB, the backend, and this frontend together.
-It assumes the repos are cloned as siblings:
+This frontend repo provides the React Router UI for the interview app and is
+meant to be reviewed with the sibling backend and infra repos:
 
 ```text
-Ramin/
+FountainLifeNotebook/
   JacobiSolutions.FountainLifeNotebook.Backend/
   jacobi-solutions.fountain-life-notebook.frontend/
+  JacobiSolutions.FountainLifeNotebook.Infra/
 ```
 
-From the sibling backend repo:
+## Project Map / Milestone Summary
+
+| Milestone | Major idea | Backend | Frontend | Infra |
+| --- | --- | --- | --- | --- |
+| 00 Starter Stack | App shells, local defaults, repo boundaries. | [backend](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Backend/tree/milestone%2F00-starter-stack) | [frontend](https://github.com/jacobi-solutions/jacobi-solutions.fountain-life-notebook.frontend/tree/milestone%2F00-starter-stack) | starts in Milestone 2 |
+| 01 Core Notebook | Local notebook workflow, documents, notebooks, generated contracts, local auth. | [backend](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Backend/tree/milestone%2F01-core-notebook) | [frontend](https://github.com/jacobi-solutions/jacobi-solutions.fountain-life-notebook.frontend/tree/milestone%2F01-core-notebook) | starts in Milestone 2 |
+| 02 AWS Ready Foundation | Cognito, S3/CloudFront, ECS, Secrets Manager, deployment variables. Infra starts here. | [backend](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Backend/tree/milestone%2F02-aws-ready-foundation) | [frontend](https://github.com/jacobi-solutions/jacobi-solutions.fountain-life-notebook.frontend/tree/milestone%2F02-aws-ready-foundation) | [infra](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Infra/tree/milestone%2F02-aws-ready-foundation) |
+| 03 Bedrock KB Notebooks | Bedrock Knowledge Bases, notebook retrieval, notebook/user isolation. | [backend](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Backend/tree/milestone%2F03-bedrock-kb-notebooks) | [frontend](https://github.com/jacobi-solutions/jacobi-solutions.fountain-life-notebook.frontend/tree/milestone%2F03-bedrock-kb-notebooks) | [infra](https://github.com/jacobi-solutions/JacobiSolutions.FountainLifeNotebook.Infra/tree/milestone%2F03-bedrock-kb-notebooks) |
+
+## At A Glance
+
+- Purpose: browser app, local/Cognito auth wiring, notebook UI, source/document
+  reader, API service layer, streaming client, and generated OpenAPI client
+  usage.
+- Running app: [https://d10nrh49pw7gmt.cloudfront.net](https://d10nrh49pw7gmt.cloudfront.net)
+- Fast-track setup: `npm run setup:local`, then `npm run dev`.
+- Local dependency: backend running at `VITE_API_BASE_URL` in `.env`.
+- Main review areas: `app/services`, `app/features/notebook`,
+  `app/api/generated-api-client.ts`, `app/app.css`, and
+  [orval.config.ts](orval.config.ts).
+- More detail: [run locally](#details-run-locally),
+  [frontend only](#details-frontend-only), [checks](#details-checks),
+  [contracts](#details-api-contracts), [code tour](#details-what-to-look-at),
+  [deployment context](#details-deployment-context),
+  [supporting docs](#details-supporting-docs).
+
+## Interview Review Path
+
+For a quick codebase review:
+
+1. Run or inspect the app with the terminal commands below.
+2. Skim `app/services`, `app/features/notebook`, and
+   `app/api/generated-api-client.ts`.
+3. Check contract generation in [orval.config.ts](orval.config.ts).
+4. Review `app/app.css` and `app/features/notebook/notebook-workspace.css` for
+   the Fountain Life-inspired base styling and notebook chrome.
+5. Run `npm run verify` before judging final readiness.
+
+## Details: Run Locally
+
+Prerequisites:
+
+- Node.js 22 or newer
+- MongoDB at `mongodb://localhost:27017/fountain-life-notebook`, or another
+  MongoDB URI set in the backend `.env`
+
+Terminal 1, from the sibling backend repo:
 
 ```bash
-docker compose -f docker-compose.local.yml up
+cd ../JacobiSolutions.FountainLifeNotebook.Backend
+npm run setup:local
+npm run start:dev
 ```
 
-Then open:
+Terminal 2, from this frontend repo:
+
+```bash
+npm run setup:local
+npm run dev
+```
+
+Open:
 
 ```text
 http://localhost:5173
 ```
 
-### Option B: VS Code Debugger
+Useful URLs:
 
-The backend repo includes `FountainLifeNotebook.code-workspace`, which opens both repos and provides a full-stack debugger configuration.
+```text
+Frontend:   http://localhost:5173
+API health: http://localhost:3000/api/health
+API docs:   http://localhost:3000/api/docs
+```
 
-From this frontend repo alone, VS Code also exposes `Frontend: Debug Chrome`. That configuration starts the normal frontend dev server through `npm run dev` and opens Chrome at `http://localhost:5173`. The backend still needs to be running separately.
-
-### Option C: Manual Local Development
+The setup script is only a shortcut for normal local setup. The manual
+equivalent is:
 
 ```bash
 npm ci
-cp .env.example .env
+test -f .env || cp .env.example .env
+```
+
+## Details: Frontend Only
+
+Use this if the backend is already running at `http://localhost:3000/api`.
+
+Prerequisites:
+
+- Node.js 22 or newer
+
+```bash
+npm run setup:local
 npm run dev
 ```
 
-The app runs at `http://localhost:5173` and points to `http://localhost:3000/api` by default.
-
-Local auth is enabled by default:
-
-```bash
-VITE_AUTH_MODE=local
-VITE_LOCAL_AUTH_EMAIL=local.user@fountainlife.local
-```
-
-To use Cognito instead, set `VITE_AUTH_MODE=cognito` and provide `VITE_COGNITO_AUTHORITY`, `VITE_COGNITO_CLIENT_ID`, and `VITE_COGNITO_REDIRECT_URI`.
-
-## AWS Static Deployment
-
-The AWS-ready foundation lives in the sibling infra repo:
+Open:
 
 ```text
-../JacobiSolutions.FountainLifeNotebook.Infra
+http://localhost:5173
 ```
 
-The intended frontend deployment path is:
+The default `.env.example` uses local auth and points to the local backend.
+Cognito is not required for local development.
 
-1. GitHub Actions typechecks, tests, and builds the static SPA.
-2. `build/client` is synced to a private S3 bucket.
-3. CloudFront serves the S3 bucket and rewrites SPA routes back to `index.html`.
-4. CloudFront proxies `/api/*` to the backend load balancer.
+## Details: Optional Docker
 
-For the deployed static build, Vite variables are compile-time values. Use the Terraform `github_frontend_repository_variables` output to set GitHub repository variables:
+The sibling backend repo includes `docker-compose.local.yml` for a containerized
+local stack, and the deployed app is built around containerized backend
+infrastructure. The Compose path has not been the primary verified local
+interview workflow, so we recommend the terminal setup above.
+
+If you want to try it from this frontend repo:
 
 ```bash
-VITE_API_BASE_URL=/api
-VITE_AUTH_MODE=cognito
-VITE_COGNITO_AUTHORITY=https://cognito-idp.<region>.amazonaws.com/<user-pool-id>
-VITE_COGNITO_CLIENT_ID=<app-client-id>
-VITE_COGNITO_REDIRECT_URI=https://<cloudfront-domain>
+cd ../JacobiSolutions.FountainLifeNotebook.Backend
+docker compose -f docker-compose.local.yml up
 ```
 
-Run the manual `Deploy Static Site` GitHub Actions workflow only after Terraform has created the S3 bucket, CloudFront distribution, Cognito app client, and GitHub OIDC role.
-
-## Contracts
-
-After backend DTO changes and backend OpenAPI export:
-
-```bash
-npm run contract:generate
-```
-
-This runs Orval against the backend OpenAPI document and regenerates callable API functions. Frontend services should import those generated functions instead of hard-coding normal JSON endpoint paths.
-
-The assistant streaming endpoint still uses the hand-written SSE client because it is not a normal JSON request/response operation.
-
-For convenience, either sibling repo can run the full backend export plus frontend generate flow:
-
-```bash
-npm run contract:sync
-```
-
-This assumes the repos are checked out as siblings:
-
-```text
-Ramin/
-  JacobiSolutions.FountainLifeNotebook.Backend/
-  jacobi-solutions.fountain-life-notebook.frontend/
-```
-
-## Checks
+## Details: Checks
 
 ```bash
 npm run verify
 ```
 
-This regenerates contracts, typechecks, runs tests, and builds the app.
+This regenerates API contracts, typechecks, runs tests, and builds the app.
+
+Focused commands:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run contract:generate
+```
+
+## Details: API Contracts
+
+Generated API functions live at:
+
+```text
+app/api/generated/fountain-life-api.ts
+```
+
+When backend request or response shapes change:
+
+```bash
+npm run contract:sync
+```
+
+That exports the sibling backend OpenAPI document and regenerates this client.
+Normal JSON API calls should use generated functions. Streaming still uses the
+hand-written SSE client.
+
+## Details: What To Look At
+
+- `app/services`: auth, API clients, streaming, and service composition.
+- `app/features/notebook`: main product workflow, view-model logic, responsive
+  notebook workspace tabs, chat, sources, and document reader.
+- `app/app.css`: global base styles that apply to every route.
+- `app/features/notebook/notebook-workspace.css`: notebook-specific brand chrome
+  and responsive layout.
+- `app/api/generated-api-client.ts`: auth header injection and base URL wiring.
+- `app/api/generated/fountain-life-api.ts`: generated OpenAPI client.
+- `vite.config.ts` and `react-router.config.ts`: build/runtime setup.
+
+## Details: Local Defaults
+
+```text
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_AUTH_MODE=local
+VITE_LOCAL_AUTH_EMAIL=local.user@fountainlife.local
+```
+
+For the full list, see [.env.example](.env.example).
+
+## Details: Deployment Context
+
+The deployed frontend is a static React Router build served from private S3
+through CloudFront. CloudFront also proxies `/api/*` to the backend, so the
+browser uses one HTTPS origin. The running app is
+[https://d10nrh49pw7gmt.cloudfront.net](https://d10nrh49pw7gmt.cloudfront.net).
+Terraform lives in the sibling infra repo.
+The deploy workflow validates the committed generated API client with
+typecheck, tests, and build; contract regeneration is a local review step.
+
+## Details: Supporting Docs
+
+- [Architecture decisions](docs/ARCHITECTURE_DECISIONS.md)
+- [Feature ideas](docs/FEATURE_IDEAS.md)
+- [Technical debt](docs/TECH_DEBT.md)
+- [Engineering workflow](CONTRIBUTING.md)
+
+## Details: Troubleshooting
+
+- If frontend API calls fail, check `http://localhost:3000/api/health`.
+- If generated types are stale, run `npm run contract:sync`.
+- If `npm run contract:generate` cannot find OpenAPI, run
+  `npm run contract:export` in the sibling backend repo.
