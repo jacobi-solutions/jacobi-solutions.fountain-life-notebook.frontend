@@ -9,12 +9,14 @@ import {
   createNotebookQuestionRequest,
   decorateNotebookSummary,
   filterNotebooks,
+  formatAuthStatus,
   formatNotebookDate,
   getNotebookSourceCount,
   inferNotebookTitleFromPrompt,
   normalizeSelectedDocumentIds,
   orderNotebooksByMostRecent,
   shouldAutoNameNotebook,
+  shouldRequestSignIn,
   toErrorMessage,
   toggleDocumentSelection,
   toggleEveryDocumentSelection,
@@ -22,6 +24,15 @@ import {
 } from "./notebook-workspace.vm";
 
 describe("notebook workspace view model", () => {
+  it("formats auth status and identifies signed-out actions", () => {
+    expect(formatAuthStatus("signed-out")).toBe("Signed out");
+    expect(formatAuthStatus("authenticated")).toBe("Signed in");
+    expect(formatAuthStatus("loading")).toBe("Checking sign in");
+    expect(shouldRequestSignIn("signed-out")).toBe(true);
+    expect(shouldRequestSignIn("authenticated")).toBe(false);
+    expect(shouldRequestSignIn("loading")).toBe(false);
+  });
+
   it("normalizes selected document ids against the current document list", () => {
     expect(
       normalizeSelectedDocumentIds(

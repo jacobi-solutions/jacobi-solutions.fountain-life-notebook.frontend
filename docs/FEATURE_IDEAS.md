@@ -29,6 +29,12 @@ These are candidate follow-ups, not commitments.
   changes, and notebook membership interactions.
 - Add automated responsive coverage for the mobile Sources, Chat, and Studio
   tab-panel interaction.
+- Replace the current synthesized Step Away chime with a reviewed sound-bowl
+  style audio asset if the audio cue remains part of the experience. Keep mute
+  controls and reduced-distraction defaults.
+- Add more Step Away release options, such as a longer unguided nature scene,
+  a user-selected breathing duration, or a clinician-reviewed set of grounding
+  prompts.
 - Extract a shared `AppShell` or `BrandHeader` only after additional pages need
   the Fountain Life notebook chrome beyond the current notebook workspace.
 - Add richer source-reader affordances such as in-document search, citation

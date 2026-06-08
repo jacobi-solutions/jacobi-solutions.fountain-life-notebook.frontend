@@ -28,12 +28,14 @@ FountainLifeNotebook/
 ## At A Glance
 
 - Purpose: browser app, local/Cognito auth wiring, notebook UI, source/document
-  reader, API service layer, streaming client, and generated OpenAPI client
-  usage.
-- Running app: [https://d10nrh49pw7gmt.cloudfront.net](https://d10nrh49pw7gmt.cloudfront.net)
+  reader, Step Away wellness flow, API service layer, streaming client, and
+  generated OpenAPI client usage.
+- Running app: current demo deployment at
+  [https://d10nrh49pw7gmt.cloudfront.net](https://d10nrh49pw7gmt.cloudfront.net)
 - Fast-track setup: `npm run setup:local`, then `npm run dev`.
 - Local dependency: backend running at `VITE_API_BASE_URL` in `.env`.
 - Main review areas: `app/services`, `app/features/notebook`,
+  `app/features/notebook/step-away-flow.*`,
   `app/api/generated-api-client.ts`, `app/app.css`, and
   [orval.config.ts](orval.config.ts).
 - More detail: [run locally](#details-run-locally),
@@ -50,9 +52,12 @@ For a quick codebase review:
 2. Skim `app/services`, `app/features/notebook`, and
    `app/api/generated-api-client.ts`.
 3. Check contract generation in [orval.config.ts](orval.config.ts).
-4. Review `app/app.css` and `app/features/notebook/notebook-workspace.css` for
+4. Review `app/features/notebook/step-away-flow.tsx` and
+   `app/features/notebook/step-away-flow.css` for the self-contained wellness
+   interruption flow.
+5. Review `app/app.css` and `app/features/notebook/notebook-workspace.css` for
    the Fountain Life-inspired base styling and notebook chrome.
-5. Run `npm run verify` before judging final readiness.
+6. Run `npm run verify` before judging final readiness.
 
 ## Details: Run Locally
 
@@ -97,6 +102,15 @@ equivalent is:
 ```bash
 npm ci
 test -f .env || cp .env.example .env
+```
+
+For normal local mode, the frontend `.env` does not need MongoDB settings. The
+backend owns the database connection. If your MongoDB is not at the default URI,
+follow the sibling backend README and edit this line in the backend `.env`
+before starting the API:
+
+```text
+MONGODB_URI=mongodb://localhost:27017/fountain-life-notebook
 ```
 
 ## Details: Frontend Only
@@ -175,6 +189,12 @@ hand-written SSE client.
 - `app/services`: auth, API clients, streaming, and service composition.
 - `app/features/notebook`: main product workflow, view-model logic, responsive
   notebook workspace tabs, chat, sources, and document reader.
+- `app/features/notebook/step-away-flow.tsx`: local-only wellness interruption
+  flow with acknowledgment, box breathing, privacy-safe visual dissolution,
+  release messaging, continued breathing, fullscreen entry/exit, and chime
+  controls.
+- `app/features/notebook/step-away-flow.vm.ts`: pure breathing timing helpers
+  covered by focused Vitest tests.
 - `app/app.css`: global base styles that apply to every route.
 - `app/features/notebook/notebook-workspace.css`: notebook-specific brand chrome
   and responsive layout.
@@ -196,7 +216,7 @@ For the full list, see [.env.example](.env.example).
 
 The deployed frontend is a static React Router build served from private S3
 through CloudFront. CloudFront also proxies `/api/*` to the backend, so the
-browser uses one HTTPS origin. The running app is
+browser uses one HTTPS origin. The current demo app is
 [https://d10nrh49pw7gmt.cloudfront.net](https://d10nrh49pw7gmt.cloudfront.net).
 Terraform lives in the sibling infra repo.
 The deploy workflow validates the committed generated API client with

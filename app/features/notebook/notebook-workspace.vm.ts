@@ -2,6 +2,7 @@ import type {
   AssistantThreadUpdate,
   SendAssistantMessageRequest,
 } from "../../services/assistant-service";
+import type { AuthSnapshot } from "../../services/auth-service";
 import type { DocumentSummary } from "../../services/documents-service";
 import type { NotebookSummary as PersistedNotebookSummary } from "../../services/notebooks-service";
 import type {
@@ -27,6 +28,21 @@ export interface NotebookSessionState {
 }
 
 const NOTEBOOK_TONES: NotebookTone[] = ["aqua", "gold", "graphite", "violet"];
+
+export function shouldRequestSignIn(status: AuthSnapshot["status"]) {
+  return status === "signed-out";
+}
+
+export function formatAuthStatus(status: AuthSnapshot["status"]) {
+  switch (status) {
+    case "authenticated":
+      return "Signed in";
+    case "loading":
+      return "Checking sign in";
+    case "signed-out":
+      return "Signed out";
+  }
+}
 
 export function createEmptyNotebookSession(): NotebookSessionState {
   return {

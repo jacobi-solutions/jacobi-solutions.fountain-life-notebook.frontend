@@ -37,6 +37,15 @@ Known deferred work and review notes.
   not current product behavior.
 - Mobile notebook tabs currently use local view state and responsive CSS. Add
   dedicated UI coverage if this becomes a critical workflow.
+- The Step Away flow has focused timing tests, but the fullscreen transition,
+  fragment animation, audio toggle, release-message timing, reduced-motion
+  behavior, and mobile visual fit still need automated browser coverage if the
+  feature becomes part of a formal release.
+- The Step Away breathing-benefit copy links to cited sources in the UI. The
+  copy should receive clinical and compliance review before real patient use.
+- The Step Away chime is synthesized with Web Audio. A more realistic meditation
+  sound should use a reviewed audio asset, volume envelope, mute behavior, and
+  accessibility testing before shipping beyond demo scope.
 - Patient-friendly result summaries and follow-up extraction need careful
   citation UX so patients can see what came from source material.
 - View-model tests should expand around streaming, doctor-review states,
