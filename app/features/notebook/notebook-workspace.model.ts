@@ -44,6 +44,7 @@ export interface NotebookWorkspaceModel {
   activeDocumentId?: string;
   activeUnavailableFeature?: string;
   authState: AuthSnapshot;
+  canInviteWorkspaceMembers: boolean;
   conversationId?: string;
   deleteDocumentId?: string;
   documents: DocumentSummary[];
@@ -96,4 +97,5 @@ export interface NotebookWorkspaceModel {
   selectedDocumentIds: string[];
   sourceCountsByNotebookId: Record<string, number>;
   statusText?: string;
+  workspaceMembers: NotebookSummary["members"];
 }

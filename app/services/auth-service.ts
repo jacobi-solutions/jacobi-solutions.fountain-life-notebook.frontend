@@ -8,7 +8,9 @@ export interface AuthSnapshot {
 }
 
 type Listener = () => void;
-type CognitoSignoutRedirectArgs = NonNullable<Parameters<UserManager["signoutRedirect"]>[0]> & {
+type CognitoSignoutRedirectArgs = NonNullable<
+  Parameters<UserManager["signoutRedirect"]>[0]
+> & {
   client_id: string;
 };
 
@@ -27,12 +29,13 @@ export class AuthService {
     this.config = config;
     this.homePageRedirectUri = toHomePageRedirectUri(config.cognitoRedirectUri);
     this.manager =
-      config.authMode === "cognito" && config.cognitoAuthority && config.cognitoClientId
+      config.authMode === "cognito" &&
+      config.cognitoAuthority &&
+      config.cognitoClientId
         ? new UserManager({
             authority: config.cognitoAuthority,
             client_id: config.cognitoClientId,
             redirect_uri: config.cognitoRedirectUri,
-            post_logout_redirect_uri: this.homePageRedirectUri,
             response_type: "code",
             scope: "openid email profile",
           })
@@ -128,7 +131,6 @@ export class AuthService {
     // Reaching this branch means the manager was constructed with a non-empty client id.
     const signOutArgs: CognitoSignoutRedirectArgs = {
       client_id: this.config.cognitoClientId,
-      post_logout_redirect_uri: this.homePageRedirectUri,
       extraQueryParams: {
         logout_uri: this.homePageRedirectUri,
       },

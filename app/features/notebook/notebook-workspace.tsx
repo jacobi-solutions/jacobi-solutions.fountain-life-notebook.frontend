@@ -32,7 +32,12 @@ import {
 import "./notebook-workspace.css";
 
 export function NotebookWorkspace() {
-  const { assistant, auth, documents, notebooks: notebooksService } = useServices();
+  const {
+    assistant,
+    auth,
+    documents,
+    notebooks: notebooksService,
+  } = useServices();
   const authState = useAuth();
   const queryClient = useQueryClient();
   const [activeNotebookId, setActiveNotebookId] = useState<string>();
@@ -77,6 +82,12 @@ export function NotebookWorkspace() {
   const activeNotebook = notebooks.find(
     (notebook) => notebook.id === activeNotebookId,
   );
+  const inviteTargetNotebook =
+    activeNotebook?.role === "owner"
+      ? activeNotebook
+      : notebooks.find((notebook) => notebook.role === "owner");
+  const canInviteWorkspaceMembers =
+    authState.status === "authenticated" && Boolean(inviteTargetNotebook);
 
   useEffect(() => {
     if (!shouldRequestSignIn(authState.status) || hasRequestedSignIn.current) {
@@ -111,7 +122,10 @@ export function NotebookWorkspace() {
   const notebookConversationQuery = useQuery({
     enabled: authState.status === "authenticated" && Boolean(activeNotebookId),
     queryFn: () =>
-      assistant.getNotebookConversation(NOTEBOOK_ASSISTANT_KEY, activeNotebookId!),
+      assistant.getNotebookConversation(
+        NOTEBOOK_ASSISTANT_KEY,
+        activeNotebookId!,
+      ),
     queryKey: [
       ...ASSISTANT_CONVERSATION_QUERY_KEY,
       NOTEBOOK_ASSISTANT_KEY,
@@ -143,7 +157,8 @@ export function NotebookWorkspace() {
   });
 
   const deleteNotebookMutation = useMutation({
-    mutationFn: (notebookId: string) => notebooksService.deleteNotebook(notebookId),
+    mutationFn: (notebookId: string) =>
+      notebooksService.deleteNotebook(notebookId),
     onSuccess: async (_result, notebookId) => {
       setNotebookSessions((current) => {
         const next = { ...current };
@@ -249,7 +264,10 @@ export function NotebookWorkspace() {
     },
     onError: (_error, _notebookId, context) => {
       if (context) {
-        queryClient.setQueryData(context.queryKey, context.previousConversation);
+        queryClient.setQueryData(
+          context.queryKey,
+          context.previousConversation,
+        );
       }
     },
     onSuccess: async (_result, _notebookId, context) => {
@@ -296,13 +314,17 @@ export function NotebookWorkspace() {
       }
 
       updateNotebookSession(notebookId, () => ({ statusText: undefined }));
-      await assistant.streamMessage(NOTEBOOK_ASSISTANT_KEY, request, (update) => {
-        updateNotebookSession(notebookId, (current) => ({
-          conversationId: update.conversationId,
-          messages: appendThreadUpdate(current.messages, update),
-          statusText: update.type === "status" ? update.text : undefined,
-        }));
-      });
+      await assistant.streamMessage(
+        NOTEBOOK_ASSISTANT_KEY,
+        request,
+        (update) => {
+          updateNotebookSession(notebookId, (current) => ({
+            conversationId: update.conversationId,
+            messages: appendThreadUpdate(current.messages, update),
+            statusText: update.type === "status" ? update.text : undefined,
+          }));
+        },
+      );
       updateNotebookSession(notebookId, () => ({ question: "" }));
     },
   });
@@ -550,13 +572,14 @@ export function NotebookWorkspace() {
   }
 
   function sendInvite() {
-    if (!activeNotebookId) {
+    const notebookId = inviteTargetNotebook?.id;
+    if (!notebookId) {
       return;
     }
 
     inviteNotebookMemberMutation.mutate({
       email: notebookInviteDraft.email,
-      notebookId: activeNotebookId,
+      notebookId,
       role: notebookInviteDraft.role,
     });
   }
@@ -582,6 +605,7 @@ export function NotebookWorkspace() {
       activeDocumentId={activeDocumentId}
       activeUnavailableFeature={activeUnavailableFeature}
       authState={authState}
+      canInviteWorkspaceMembers={canInviteWorkspaceMembers}
       conversationId={activeNotebookSession.conversationId}
       deleteDocumentId={deleteDocumentId}
       documents={currentDocuments}
@@ -614,7 +638,9 @@ export function NotebookWorkspace() {
       }}
       onCreateNotebook={createNotebook}
       onDismissUnavailableFeature={() => setActiveUnavailableFeature(undefined)}
-      onDeleteNotebook={(notebookId) => deleteNotebookMutation.mutate(notebookId)}
+      onDeleteNotebook={(notebookId) =>
+        deleteNotebookMutation.mutate(notebookId)
+      }
       onDeleteDocument={(documentId) => {
         if (activeNotebookId) {
           deleteMutation.mutate({ documentId, notebookId: activeNotebookId });
@@ -664,6 +690,7 @@ export function NotebookWorkspace() {
       selectedDocumentIds={effectiveSelectedDocumentIds}
       sourceCountsByNotebookId={sourceCountsByNotebookId}
       statusText={activeNotebookSession.statusText}
+      workspaceMembers={inviteTargetNotebook?.members ?? []}
     />
   );
 }

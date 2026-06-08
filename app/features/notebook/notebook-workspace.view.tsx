@@ -27,14 +27,18 @@ const STUDIO_ACTIONS = [
 ];
 
 const STUDIO_FEATURE_DESCRIPTIONS: Record<string, string> = {
-  "Ask a doctor": "Send a source-grounded question and AI draft for clinician review.",
-  "Audio Overview": "Generate a short spoken walkthrough of the selected sources.",
-  "Compare sources": "Highlight what agrees, conflicts, or changed across documents.",
+  "Ask a doctor":
+    "Send a source-grounded question and AI draft for clinician review.",
+  "Audio Overview":
+    "Generate a short spoken walkthrough of the selected sources.",
+  "Compare sources":
+    "Highlight what agrees, conflicts, or changed across documents.",
   "Follow-ups": "Extract recommended next steps and questions to track.",
   "Learning mode": "Explain medical terms from these files in plain language.",
   "Source guide": "Create a quick guide to what each uploaded file contains.",
-  "Timeline": "Arrange findings, visits, labs, and reports in date order.",
-  "Visit prep brief": "Build a concise summary and agenda for an upcoming visit.",
+  Timeline: "Arrange findings, visits, labs, and reports in date order.",
+  "Visit prep brief":
+    "Build a concise summary and agenda for an upcoming visit.",
 };
 
 const APP_VERSION = `v${__APP_VERSION__}`;
@@ -169,15 +173,6 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
             {authStatusLabel}
           </span>
-          {model.activeNotebook?.role === "owner" ? (
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={model.onStartInviteMember}
-            >
-              Add user
-            </button>
-          ) : null}
           {model.authState.status === "authenticated" ? (
             <button
               type="button"
@@ -204,7 +199,9 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
         <span>&copy; 2026 Fountain Life</span>
       </footer>
       {model.editingNotebook ? <NotebookEditor model={model} /> : null}
-      {model.isInviteMemberVisible ? <NotebookInviteDialog model={model} /> : null}
+      {model.isInviteMemberVisible ? (
+        <NotebookInviteDialog model={model} />
+      ) : null}
     </main>
   );
 }
@@ -246,7 +243,9 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
             type="search"
             value={model.notebookSearch}
             placeholder={
-              requiresSignIn ? "Sign in to search notebooks" : "Search notebooks"
+              requiresSignIn
+                ? "Sign in to search notebooks"
+                : "Search notebooks"
             }
             onChange={(event) =>
               model.onNotebookSearchChange(event.currentTarget.value)
@@ -260,6 +259,16 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
         >
           {requiresSignIn ? createNotebookLabel : `+ ${createNotebookLabel}`}
         </button>
+        {model.canInviteWorkspaceMembers ? (
+          <button
+            type="button"
+            className="ghost-button"
+            disabled={isAuthLoading}
+            onClick={model.onStartInviteMember}
+          >
+            Add user
+          </button>
+        ) : null}
       </section>
 
       {model.notebooksError ? (
@@ -398,7 +407,9 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
     model.onAskQuestion();
   }
 
-  function submitQuestionFromKeyboard(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function submitQuestionFromKeyboard(
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) {
     if (
       event.key !== "Enter" ||
       event.shiftKey ||
@@ -632,7 +643,9 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                       <small>{formatBytes(document.byteSize)}</small>
                     </div>
                     <details className="document-row-menu">
-                      <summary aria-label={`Source actions for ${document.originalFileName}`}>
+                      <summary
+                        aria-label={`Source actions for ${document.originalFileName}`}
+                      >
                         <span aria-hidden="true">⋮</span>
                       </summary>
                       <button
@@ -1056,14 +1069,8 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
         {isLocalSession ? (
           <>
             <div className="notebook-local-resource-message">
-              <p>
-                Adding users is only available in the deployed resource.
-              </p>
-              <a
-                href={DEPLOYED_FRONTEND_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <p>Adding users is only available in the deployed resource.</p>
+              <a href={DEPLOYED_FRONTEND_URL} target="_blank" rel="noreferrer">
                 Open deployed Fountain Life Notebook
               </a>
             </div>
@@ -1116,14 +1123,18 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
                 ))}
               </select>
             </label>
-            <div className="notebook-member-list" aria-label="Workspace members">
-              {(model.activeNotebook?.members ?? []).map((member, index) => (
+            <div
+              className="notebook-member-list"
+              aria-label="Workspace members"
+            >
+              {model.workspaceMembers.map((member, index) => (
                 <span
                   key={`${member.email ?? member.userId ?? "member"}-${member.role}-${index}`}
                 >
                   <strong>{member.email ?? "Signed-in member"}</strong>
                   <small>
-                    {formatRole(member.role)} · {formatMemberStatus(member.status)}
+                    {formatRole(member.role)} ·{" "}
+                    {formatMemberStatus(member.status)}
                   </small>
                 </span>
               ))}
@@ -1159,7 +1170,9 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
   );
 }
 
-function parseInviteRole(value: string): NotebookInviteDraft["role"] | undefined {
+function parseInviteRole(
+  value: string,
+): NotebookInviteDraft["role"] | undefined {
   return INVITE_ROLES.find((role) => role === value);
 }
 

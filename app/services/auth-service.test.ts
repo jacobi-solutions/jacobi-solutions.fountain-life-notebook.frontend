@@ -11,16 +11,19 @@ const userManagerInstances = vi.hoisted(
 );
 
 vi.mock("oidc-client-ts", () => ({
-  UserManager: vi.fn(function MockUserManager(this: {
-    events: {
-      addUserLoaded: ReturnType<typeof vi.fn>;
-      addUserUnloaded: ReturnType<typeof vi.fn>;
-    };
-    getUser: ReturnType<typeof vi.fn>;
-    signinRedirect: ReturnType<typeof vi.fn>;
-    signinRedirectCallback: ReturnType<typeof vi.fn>;
-    signoutRedirect: ReturnType<typeof vi.fn>;
-  }, settings: unknown) {
+  UserManager: vi.fn(function MockUserManager(
+    this: {
+      events: {
+        addUserLoaded: ReturnType<typeof vi.fn>;
+        addUserUnloaded: ReturnType<typeof vi.fn>;
+      };
+      getUser: ReturnType<typeof vi.fn>;
+      signinRedirect: ReturnType<typeof vi.fn>;
+      signinRedirectCallback: ReturnType<typeof vi.fn>;
+      signoutRedirect: ReturnType<typeof vi.fn>;
+    },
+    settings: unknown,
+  ) {
     userManagerSettings.push(settings);
     this.events = {
       addUserLoaded: vi.fn(),
@@ -94,11 +97,12 @@ describe("AuthService", () => {
     expect(assign).toHaveBeenCalledWith("https://app.example.com/");
   });
 
-  it("configures Cognito sign out to return to the home page", () => {
+  it("configures Cognito sign in with the callback URL", () => {
     new AuthService({
       ...baseConfig,
       authMode: "cognito",
-      cognitoAuthority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
+      cognitoAuthority:
+        "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
       cognitoClientId: "client-id",
       cognitoRedirectUri: "https://app.example.com/auth/callback",
     });
@@ -106,7 +110,6 @@ describe("AuthService", () => {
     expect(userManagerSettings).toHaveLength(1);
     expect(userManagerSettings[0]).toMatchObject({
       redirect_uri: "https://app.example.com/auth/callback",
-      post_logout_redirect_uri: "https://app.example.com/",
     });
   });
 
@@ -114,7 +117,8 @@ describe("AuthService", () => {
     const auth = new AuthService({
       ...baseConfig,
       authMode: "cognito",
-      cognitoAuthority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
+      cognitoAuthority:
+        "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
       cognitoClientId: "client-id",
       cognitoRedirectUri: "https://app.example.com/auth/callback",
     });
@@ -123,7 +127,6 @@ describe("AuthService", () => {
 
     expect(userManagerInstances[0]?.signoutRedirect).toHaveBeenCalledWith({
       client_id: "client-id",
-      post_logout_redirect_uri: "https://app.example.com/",
       extraQueryParams: {
         logout_uri: "https://app.example.com/",
       },
