@@ -12,7 +12,6 @@ vi.mock("../api/generated/fountain-life-api", () => ({
   },
   listDocuments: vi.fn(),
   uploadDocument: vi.fn(),
-  viewDocument: vi.fn(),
 }));
 
 describe("DocumentsService", () => {
@@ -59,7 +58,9 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.deleteDocument("document-1", "notebook-1")).resolves.toBeUndefined();
+    await expect(
+      service.deleteDocument("document-1", "notebook-1"),
+    ).resolves.toBeUndefined();
     expect(generatedApi.deleteDocument).toHaveBeenCalledWith({
       documentId: "document-1",
       notebookId: "notebook-1",
@@ -91,39 +92,10 @@ describe("DocumentsService", () => {
     });
     const service = new DocumentsService();
 
-    await expect(service.listDocuments("notebook-1")).resolves.toEqual(documents);
+    await expect(service.listDocuments("notebook-1")).resolves.toEqual(
+      documents,
+    );
     expect(generatedApi.listDocuments).toHaveBeenCalledWith({
-      notebookId: "notebook-1",
-    });
-  });
-
-  it("loads document content by id", async () => {
-    const document = {
-      byteSize: 12,
-      chunkCount: 1,
-      chunks: [{ chunkIndex: 0, text: "Full source text" }],
-      contentType: "text/plain",
-      createdDateUtc: "2026-01-01T00:00:00.000Z",
-      id: "document-1",
-      lastUpdatedDateUtc: "2026-01-01T00:00:00.000Z",
-      notebookId: "notebook-1",
-      originalFileName: "notes.txt",
-      status: DocumentSummaryStatus.ready,
-    };
-    vi.mocked(generatedApi.viewDocument).mockResolvedValue({
-      data: {
-        document,
-        errors: [],
-        isSuccess: true,
-      },
-      headers: new Headers(),
-      status: 200,
-    });
-    const service = new DocumentsService();
-
-    await expect(service.viewDocument("document-1", "notebook-1")).resolves.toEqual(document);
-    expect(generatedApi.viewDocument).toHaveBeenCalledWith({
-      documentId: "document-1",
       notebookId: "notebook-1",
     });
   });

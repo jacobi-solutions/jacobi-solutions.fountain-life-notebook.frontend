@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
 import {
   ASSISTANT_CONVERSATION_QUERY_KEY,
-  DOCUMENT_DETAIL_QUERY_KEY,
   DOCUMENTS_QUERY_KEY,
   DOCUMENT_UPLOAD_ERROR_MESSAGE,
   NOTEBOOK_ASSISTANT_KEY,
@@ -41,7 +40,6 @@ export function NotebookWorkspace() {
   const authState = useAuth();
   const queryClient = useQueryClient();
   const [activeNotebookId, setActiveNotebookId] = useState<string>();
-  const [activeDocumentId, setActiveDocumentId] = useState<string>();
   const [activeUnavailableFeature, setActiveUnavailableFeature] =
     useState<string>();
   const [deleteDocumentId, setDeleteDocumentId] = useState<string>();
@@ -110,15 +108,6 @@ export function NotebookWorkspace() {
     queryKey: [...DOCUMENTS_QUERY_KEY, activeNotebookId],
   });
 
-  const documentDetailQuery = useQuery({
-    enabled:
-      authState.status === "authenticated" &&
-      Boolean(activeNotebookId) &&
-      Boolean(activeDocumentId),
-    queryFn: () => documents.viewDocument(activeDocumentId!, activeNotebookId!),
-    queryKey: [DOCUMENT_DETAIL_QUERY_KEY, activeNotebookId, activeDocumentId],
-  });
-
   const notebookConversationQuery = useQuery({
     enabled: authState.status === "authenticated" && Boolean(activeNotebookId),
     queryFn: () =>
@@ -167,7 +156,6 @@ export function NotebookWorkspace() {
       });
       if (activeNotebookId === notebookId) {
         setActiveNotebookId(undefined);
-        setActiveDocumentId(undefined);
       }
       if (editingNotebookId === notebookId) {
         setEditingNotebookId(undefined);
@@ -212,7 +200,6 @@ export function NotebookWorkspace() {
           document.id,
         ),
       }));
-      setActiveDocumentId(document.id);
       await invalidateNotebookData(notebookId);
     },
   });
@@ -241,9 +228,6 @@ export function NotebookWorkspace() {
           ]),
         ),
       );
-      if (activeDocumentId === documentId) {
-        setActiveDocumentId(undefined);
-      }
       await invalidateNotebookData(notebookId);
     },
   });
@@ -330,10 +314,6 @@ export function NotebookWorkspace() {
   });
 
   const currentDocuments = documentsQuery.data ?? [];
-  const activeDocument =
-    documentDetailQuery.data?.id === activeDocumentId
-      ? documentDetailQuery.data
-      : undefined;
   const activeNotebookSession = activeNotebookId
     ? (notebookSessions[activeNotebookId] ?? createEmptyNotebookSession())
     : createEmptyNotebookSession();
@@ -600,9 +580,6 @@ export function NotebookWorkspace() {
   return (
     <NotebookWorkspaceView
       activeNotebook={activeNotebook}
-      activeDocument={activeDocument}
-      activeDocumentError={toErrorMessage(documentDetailQuery.error)}
-      activeDocumentId={activeDocumentId}
       activeUnavailableFeature={activeUnavailableFeature}
       authState={authState}
       canInviteWorkspaceMembers={canInviteWorkspaceMembers}
@@ -616,9 +593,6 @@ export function NotebookWorkspace() {
       insightCountsByNotebookId={insightCountsByNotebookId}
       isAsking={askMutation.isPending}
       isDeleting={deleteMutation.isPending}
-      isDocumentLoading={
-        Boolean(activeDocumentId) && documentDetailQuery.isFetching
-      }
       isDocumentsLoading={documentsQuery.isLoading}
       isInviteMemberVisible={isInviteMemberVisible}
       isInvitingMember={inviteNotebookMemberMutation.isPending}
@@ -649,7 +623,6 @@ export function NotebookWorkspace() {
       onEditNotebook={editNotebook}
       onInviteDraftChange={setNotebookInviteDraft}
       onNewThread={startNewThread}
-      onOpenDocument={setActiveDocumentId}
       onNotebookDraftChange={setNotebookDraft}
       onNotebookSearchChange={setNotebookSearch}
       onQuestionChange={changeQuestion}
@@ -658,9 +631,7 @@ export function NotebookWorkspace() {
       onStartInviteMember={() => setIsInviteMemberVisible(true)}
       onSelectNotebook={(notebookId) => {
         setActiveNotebookId(notebookId);
-        setActiveDocumentId(undefined);
       }}
-      onShowChat={() => setActiveDocumentId(undefined)}
       onSignIn={() => void signIn()}
       onSignOut={() => void auth.signOut()}
       onToggleDocument={toggleDocument}

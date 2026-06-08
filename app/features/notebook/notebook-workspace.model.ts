@@ -1,9 +1,6 @@
 import type { AuthSnapshot } from "../../services/auth-service";
 import type { AssistantThreadUpdate } from "../../services/assistant-service";
-import type {
-  DocumentDetail,
-  DocumentSummary,
-} from "../../services/documents-service";
+import type { DocumentSummary } from "../../services/documents-service";
 import type { NotebookMemberRole } from "../../services/notebooks-service";
 
 export type NotebookTone = "aqua" | "gold" | "graphite" | "violet";
@@ -39,9 +36,6 @@ export interface NotebookInviteDraft {
 
 export interface NotebookWorkspaceModel {
   activeNotebook?: NotebookSummary;
-  activeDocument?: DocumentDetail;
-  activeDocumentError?: string;
-  activeDocumentId?: string;
   activeUnavailableFeature?: string;
   authState: AuthSnapshot;
   canInviteWorkspaceMembers: boolean;
@@ -54,7 +48,6 @@ export interface NotebookWorkspaceModel {
   isAsking: boolean;
   isDeleting: boolean;
   isDocumentsLoading: boolean;
-  isDocumentLoading: boolean;
   isInviteMemberVisible: boolean;
   isNotebookListVisible: boolean;
   isNotebooksLoading: boolean;
@@ -72,14 +65,12 @@ export interface NotebookWorkspaceModel {
   onEditNotebook: (notebookId: string) => void;
   onInviteDraftChange: (draft: NotebookInviteDraft) => void;
   onNewThread: () => void;
-  onOpenDocument: (documentId: string) => void;
   onNotebookDraftChange: (draft: NotebookEditorDraft) => void;
   onNotebookSearchChange: (query: string) => void;
   onQuestionChange: (question: string) => void;
   onSaveNotebook: () => void;
   onSendInvite: () => void;
   onStartInviteMember: () => void;
-  onShowChat: () => void;
   onSelectNotebook: (notebookId: string) => void;
   onSignIn: () => void;
   onSignOut: () => void;

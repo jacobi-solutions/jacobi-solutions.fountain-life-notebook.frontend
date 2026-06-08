@@ -969,92 +969,9 @@
   font-size: 0.85rem;
 }
 
-.citation-source-button {
-  display: block;
-  min-height: 0;
-  border: 0;
-  padding: 0;
-  color: #ffffff;
-  background: transparent;
-  font-size: 0.85rem;
-  font-weight: 750;
-  text-align: left;
-}
-
-.citation-source-button:hover {
-  color: var(--fl-aqua);
-  transform: none;
-}
-
 .citation-list p {
   color: rgba(247, 247, 242, 0.72);
   font-size: 0.9rem;
-}
-
-.document-reader {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-height: 0;
-  overflow: hidden;
-}
-
-.document-reader-header {
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  padding: 0.82rem;
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.document-reader-header strong,
-.document-reader-header span {
-  display: block;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.document-reader-header strong {
-  color: #ffffff;
-  font-size: 1.02rem;
-}
-
-.document-reader-header span,
-.document-reader-section span {
-  color: rgba(247, 247, 242, 0.64);
-  font-size: 0.78rem;
-}
-
-.document-reader-body {
-  display: grid;
-  align-content: start;
-  gap: 0.75rem;
-  min-height: 0;
-  overflow: auto;
-  padding-right: 0.25rem;
-}
-
-.document-reader-section {
-  border-left: 3px solid rgba(134, 215, 242, 0.52);
-  padding: 0.15rem 0 0.25rem 0.85rem;
-}
-
-.document-reader-section span {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-weight: 750;
-  text-transform: uppercase;
-}
-
-.document-reader-section p {
-  margin: 0;
-  color: #ffffff;
-  line-height: 1.62;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.document-reader-empty {
-  min-height: 12rem;
 }
 
 .question-box {

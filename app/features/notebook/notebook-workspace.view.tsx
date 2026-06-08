@@ -173,7 +173,7 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
             {authStatusLabel}
           </span>
-          {model.canInviteWorkspaceMembers ? (
+          {model.isNotebookListVisible && model.canInviteWorkspaceMembers ? (
             <button
               type="button"
               className="ghost-button"
@@ -385,7 +385,6 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
   const selectedCount = model.selectedDocumentIds.length;
   const allDocumentsSelected =
     model.documents.length > 0 && selectedCount === model.documents.length;
-  const isViewingDocument = Boolean(model.activeDocumentId);
   const requiresSignIn = shouldRequestSignIn(model.authState.status);
   const isAuthLoading = model.authState.status === "loading";
   const chatContextLabel = model.conversationId
@@ -680,23 +679,10 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         >
           <div className="panel-heading">
             <div>
-              <p>
-                {isViewingDocument
-                  ? (model.activeDocument?.originalFileName ?? "Opening source")
-                  : chatContextLabel}
-              </p>
-              <h2>{isViewingDocument ? "Document" : "Chat"}</h2>
+              <p>{chatContextLabel}</p>
+              <h2>Chat</h2>
             </div>
             <div className="panel-heading-actions">
-              {isViewingDocument ? (
-                <button
-                  type="button"
-                  className="ghost-button compact-button"
-                  onClick={model.onShowChat}
-                >
-                  Chat
-                </button>
-              ) : null}
               <button
                 type="button"
                 className="ghost-button compact-button"
@@ -707,73 +693,62 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             </div>
           </div>
 
-          {isViewingDocument ? (
-            <DocumentReader model={model} />
-          ) : (
-            <div className="message-list" aria-live="polite">
-              {model.messages.length === 0 && model.documents.length === 0 ? (
-                <div className="empty-state tall-empty notebook-empty-workspace">
-                  <strong>Create a clinical overview from your sources</strong>
-                  <span>
-                    Upload member records, labs, reports, or notes to start a
-                    Fountain Life notebook.
-                  </span>
-                  <div className="drop-zone-preview">
-                    <p>or drop your files</p>
-                    <small>PDF, TXT, Markdown</small>
-                    <label>
-                      <input
-                        accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
-                        disabled={requiresSignIn || isAuthLoading}
-                        multiple
-                        type="file"
-                        onChange={(event) => {
-                          model.onUploadFiles(event.currentTarget.files);
-                          event.currentTarget.value = "";
-                        }}
-                      />
-                      <span>Upload files</span>
-                    </label>
-                  </div>
+          <div className="message-list" aria-live="polite">
+            {model.messages.length === 0 && model.documents.length === 0 ? (
+              <div className="empty-state tall-empty notebook-empty-workspace">
+                <strong>Create a clinical overview from your sources</strong>
+                <span>
+                  Upload member records, labs, reports, or notes to start a
+                  Fountain Life notebook.
+                </span>
+                <div className="drop-zone-preview">
+                  <p>or drop your files</p>
+                  <small>PDF, TXT, Markdown</small>
+                  <label>
+                    <input
+                      accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+                      disabled={requiresSignIn || isAuthLoading}
+                      multiple
+                      type="file"
+                      onChange={(event) => {
+                        model.onUploadFiles(event.currentTarget.files);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                    <span>Upload files</span>
+                  </label>
                 </div>
-              ) : model.messages.length === 0 ? (
-                <p className="empty-state chat-empty-hint">
-                  Ask questions here about your files.
-                </p>
-              ) : (
-                model.messages.map((message, index) => (
-                  <article
-                    className={`chat-message chat-message-${message.role}`}
-                    key={`${message.messageId ?? message.conversationId}-${index}`}
-                  >
-                    <span>{message.role}</span>
-                    <p>{message.text}</p>
-                    {message.citations?.length ? (
-                      <ol className="citation-list">
-                        {message.citations.map((citation, citationIndex) => (
-                          <li
-                            key={`${citation.documentId}-${citation.chunkIndex}-${citationIndex}`}
-                          >
-                            <button
-                              type="button"
-                              className="citation-source-button"
-                              onClick={() => {
-                                model.onOpenDocument(citation.documentId);
-                                showWorkspaceSection("notebook-chat");
-                              }}
-                            >
-                              [{citationIndex + 1}] {citation.documentName}
-                            </button>
-                            <p>{citation.snippet}</p>
-                          </li>
-                        ))}
-                      </ol>
-                    ) : null}
-                  </article>
-                ))
-              )}
-            </div>
-          )}
+              </div>
+            ) : model.messages.length === 0 ? (
+              <p className="empty-state chat-empty-hint">
+                Ask questions here about your files.
+              </p>
+            ) : (
+              model.messages.map((message, index) => (
+                <article
+                  className={`chat-message chat-message-${message.role}`}
+                  key={`${message.messageId ?? message.conversationId}-${index}`}
+                >
+                  <span>{message.role}</span>
+                  <p>{message.text}</p>
+                  {message.citations?.length ? (
+                    <ol className="citation-list">
+                      {message.citations.map((citation, citationIndex) => (
+                        <li
+                          key={`${citation.documentId}-${citation.chunkIndex}-${citationIndex}`}
+                        >
+                          <strong>
+                            [{citationIndex + 1}] {citation.documentName}
+                          </strong>
+                          <p>{citation.snippet}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </article>
+              ))
+            )}
+          </div>
 
           {model.statusText ? (
             <p className="status-line">{model.statusText}</p>
@@ -782,34 +757,32 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             <p className="inline-error">{model.operationError}</p>
           ) : null}
 
-          {isViewingDocument ? null : (
-            <form className="question-box" onSubmit={submitQuestion}>
-              <textarea
-                ref={questionInputRef}
-                value={model.question}
-                placeholder={
-                  selectedCount > 0
-                    ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
-                    : "Ask Zori across this notebook's uploaded documents"
-                }
-                rows={3}
-                onChange={(event) =>
-                  model.onQuestionChange(event.currentTarget.value)
-                }
-                onKeyDown={submitQuestionFromKeyboard}
-              />
-              <button
-                type="submit"
-                disabled={isAuthLoading || (!requiresSignIn && !canAsk)}
-              >
-                {requiresSignIn
-                  ? "Sign in to ask"
-                  : model.isAsking
-                    ? "Answering"
-                    : "Ask"}
-              </button>
-            </form>
-          )}
+          <form className="question-box" onSubmit={submitQuestion}>
+            <textarea
+              ref={questionInputRef}
+              value={model.question}
+              placeholder={
+                selectedCount > 0
+                  ? `Ask Zori across ${selectedCount} selected document${selectedCount === 1 ? "" : "s"}`
+                  : "Ask Zori across this notebook's uploaded documents"
+              }
+              rows={3}
+              onChange={(event) =>
+                model.onQuestionChange(event.currentTarget.value)
+              }
+              onKeyDown={submitQuestionFromKeyboard}
+            />
+            <button
+              type="submit"
+              disabled={isAuthLoading || (!requiresSignIn && !canAsk)}
+            >
+              {requiresSignIn
+                ? "Sign in to ask"
+                : model.isAsking
+                  ? "Answering"
+                  : "Ask"}
+            </button>
+          </form>
         </section>
 
         <aside
@@ -856,60 +829,6 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
         </aside>
       </section>
     </>
-  );
-}
-
-function DocumentReader({ model }: { model: NotebookWorkspaceModel }) {
-  if (model.isDocumentLoading) {
-    return (
-      <p className="empty-state document-reader-empty">
-        Loading source document.
-      </p>
-    );
-  }
-
-  if (model.activeDocumentError) {
-    return <p className="inline-error">{model.activeDocumentError}</p>;
-  }
-
-  if (!model.activeDocument) {
-    return (
-      <p className="empty-state document-reader-empty">
-        Select a source to read its extracted text.
-      </p>
-    );
-  }
-
-  return (
-    <article
-      className="document-reader"
-      aria-label={`Document reader for ${model.activeDocument.originalFileName}`}
-    >
-      <header className="document-reader-header">
-        <div>
-          <strong>{model.activeDocument.originalFileName}</strong>
-          <span>
-            {formatBytes(model.activeDocument.byteSize)} /{" "}
-            {model.activeDocument.chunkCount} chunks /{" "}
-            {model.activeDocument.contentType}
-          </span>
-        </div>
-      </header>
-      <div className="document-reader-body">
-        {model.activeDocument.chunks.length === 0 ? (
-          <p className="empty-state document-reader-empty">
-            No extracted text is available for this source.
-          </p>
-        ) : (
-          model.activeDocument.chunks.map((chunk) => (
-            <section className="document-reader-section" key={chunk.chunkIndex}>
-              <span>Section {chunk.chunkIndex + 1}</span>
-              <p>{chunk.text}</p>
-            </section>
-          ))
-        )}
-      </div>
-    </article>
   );
 }
 
