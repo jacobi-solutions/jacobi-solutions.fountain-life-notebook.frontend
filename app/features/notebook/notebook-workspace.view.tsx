@@ -173,6 +173,15 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
             {authStatusLabel}
           </span>
+          {model.canInviteWorkspaceMembers ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={model.onStartInviteMember}
+            >
+              Add user
+            </button>
+          ) : null}
           {model.authState.status === "authenticated" ? (
             <button
               type="button"
@@ -259,16 +268,6 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
         >
           {requiresSignIn ? createNotebookLabel : `+ ${createNotebookLabel}`}
         </button>
-        {model.canInviteWorkspaceMembers ? (
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={isAuthLoading}
-            onClick={model.onStartInviteMember}
-          >
-            Add user
-          </button>
-        ) : null}
       </section>
 
       {model.notebooksError ? (
