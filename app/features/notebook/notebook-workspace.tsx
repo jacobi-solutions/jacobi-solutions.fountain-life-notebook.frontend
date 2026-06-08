@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useServices } from "../../services/service-context";
 import {
@@ -21,6 +21,7 @@ import {
   inferNotebookTitleFromPrompt,
   normalizeSelectedDocumentIds,
   shouldAutoNameNotebook,
+  shouldRequestSignIn,
   toErrorMessage,
   toggleDocumentSelection,
   toggleEveryDocumentSelection,
@@ -49,7 +50,18 @@ export function NotebookWorkspace() {
   const [notebookSessions, setNotebookSessions] = useState<
     Record<string, NotebookSessionState>
   >({});
+  const hasRequestedSignIn = useRef(false);
+  const [signInError, setSignInError] = useState<string>();
   const [uploadBatchError, setUploadBatchError] = useState<string>();
+
+  const signIn = useCallback(async () => {
+    setSignInError(undefined);
+    try {
+      await auth.signIn();
+    } catch (error) {
+      setSignInError(toErrorMessage(error, "Unable to start sign in."));
+    }
+  }, [auth]);
 
   const notebooksQuery = useQuery({
     enabled: authState.status === "authenticated",
@@ -63,6 +75,21 @@ export function NotebookWorkspace() {
   const activeNotebook = notebooks.find(
     (notebook) => notebook.id === activeNotebookId,
   );
+
+  useEffect(() => {
+    if (!shouldRequestSignIn(authState.status) || hasRequestedSignIn.current) {
+      return;
+    }
+
+    hasRequestedSignIn.current = true;
+    void signIn();
+  }, [authState.status, signIn]);
+
+  useEffect(() => {
+    if (authState.status === "authenticated") {
+      setSignInError(undefined);
+    }
+  }, [authState.status]);
 
   const documentsQuery = useQuery({
     enabled: authState.status === "authenticated" && Boolean(activeNotebookId),
@@ -401,6 +428,19 @@ export function NotebookWorkspace() {
     });
   }
 
+  function createNotebook() {
+    if (shouldRequestSignIn(authState.status)) {
+      void signIn();
+      return;
+    }
+
+    if (authState.status !== "authenticated") {
+      return;
+    }
+
+    createNotebookMutation.mutate();
+  }
+
   return (
     <NotebookWorkspaceView
       activeNotebook={activeNotebook}
@@ -439,7 +479,7 @@ export function NotebookWorkspace() {
         setIsInviteMemberVisible(false);
         setNotebookInviteDraft(createNotebookInviteDraft());
       }}
-      onCreateNotebook={() => createNotebookMutation.mutate()}
+      onCreateNotebook={createNotebook}
       onDismissUnavailableFeature={() => setActiveUnavailableFeature(undefined)}
       onDeleteNotebook={(notebookId) => deleteNotebookMutation.mutate(notebookId)}
       onDeleteDocument={(documentId) => {
@@ -462,13 +502,14 @@ export function NotebookWorkspace() {
         setActiveDocumentId(undefined);
       }}
       onShowChat={() => setActiveDocumentId(undefined)}
-      onSignIn={() => void auth.signIn()}
+      onSignIn={() => void signIn()}
       onSignOut={() => void auth.signOut()}
       onToggleDocument={toggleDocument}
       onToggleEveryDocument={toggleEveryDocument}
       onUnavailableFeature={setActiveUnavailableFeature}
       onUploadFiles={handleUploadFiles}
       operationError={
+        signInError ??
         uploadBatchError ??
         toErrorMessage(
           createNotebookMutation.error ??

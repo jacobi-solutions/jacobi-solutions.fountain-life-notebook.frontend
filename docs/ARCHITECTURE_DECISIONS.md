@@ -115,6 +115,30 @@ config.
   `app/features/notebook/notebook-workspace.css`, and
   `app/services/documents-service.ts`.
 
+## Step Away Flow Stays Frontend-Local And Privacy-Safe
+
+- Decision: the Step Away wellness interruption flow is a self-contained
+  frontend component mounted inside the notebook UI. It uses local React state,
+  CSS-driven animation, Web Audio chimes, and a bundled nature image instead
+  of backend state, persisted events, document mutations, or screenshot/canvas
+  capture of medical content.
+- Why we chose it: the feature is meant to help a patient pause when medical
+  information feels overwhelming. It should not create new health data, copy
+  document text into pixels, alter notebook state, or couple the interruption to
+  assistant behavior.
+- Tradeoffs considered: a screenshot-like crumble could look more literal, but
+  it risks rasterizing sensitive document content. The implemented CSS fragment
+  layer is less exact but more stable and privacy-safe. The chime is synthesized
+  in browser code rather than shipped as a polished meditation-audio asset. The
+  breathing-benefit message includes citations, but patient-facing clinical
+  copy should still be reviewed before any real health-data use.
+- Evidence/source: `app/features/notebook/step-away-flow.tsx`,
+  `app/features/notebook/step-away-flow.css`,
+  `app/features/notebook/step-away-flow.vm.ts`,
+  `app/features/notebook/step-away-flow.vm.test.ts`,
+  `public/wellness/step-away-nature.jpg`, and the Step Away mount points in
+  `app/features/notebook/notebook-workspace.view.tsx`.
+
 ## Persisted Notebook Gallery Instead Of Demo Fixtures
 
 - Decision: the notebook gallery reads notebooks from the backend and shows

@@ -39,7 +39,9 @@ describe("NotebooksService", () => {
     });
     const service = new NotebooksService();
 
-    await expect(service.createNotebook({ title: "Labs" })).resolves.toEqual(notebook);
+    await expect(service.createNotebook({ title: "Labs" })).resolves.toEqual(
+      notebook,
+    );
     expect(generatedApi.createNotebook).toHaveBeenCalledWith({
       category: undefined,
       description: undefined,
@@ -80,7 +82,9 @@ describe("NotebooksService", () => {
     const service = new NotebooksService();
 
     await expect(service.deleteNotebook("notebook-1")).resolves.toBeUndefined();
-    expect(generatedApi.deleteNotebook).toHaveBeenCalledWith({ notebookId: "notebook-1" });
+    expect(generatedApi.deleteNotebook).toHaveBeenCalledWith({
+      notebookId: "notebook-1",
+    });
   });
 
   it("invites notebook members through the API client", async () => {
@@ -128,4 +132,5 @@ const notebook = {
   role: "owner" as const,
   sourceCount: 2,
   title: "Labs",
+  workspaceId: "workspace-1",
 };

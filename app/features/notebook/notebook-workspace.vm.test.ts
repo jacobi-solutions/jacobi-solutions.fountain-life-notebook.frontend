@@ -9,12 +9,14 @@ import {
   createNotebookQuestionRequest,
   decorateNotebookSummary,
   filterNotebooks,
+  formatAuthStatus,
   formatNotebookDate,
   getNotebookSourceCount,
   inferNotebookTitleFromPrompt,
   normalizeSelectedDocumentIds,
   orderNotebooksByMostRecent,
   shouldAutoNameNotebook,
+  shouldRequestSignIn,
   toErrorMessage,
   toggleDocumentSelection,
   toggleEveryDocumentSelection,
@@ -22,24 +24,39 @@ import {
 } from "./notebook-workspace.vm";
 
 describe("notebook workspace view model", () => {
+  it("formats auth status and identifies signed-out actions", () => {
+    expect(formatAuthStatus("signed-out")).toBe("Signed out");
+    expect(formatAuthStatus("authenticated")).toBe("Signed in");
+    expect(formatAuthStatus("loading")).toBe("Checking sign in");
+    expect(shouldRequestSignIn("signed-out")).toBe(true);
+    expect(shouldRequestSignIn("authenticated")).toBe(false);
+    expect(shouldRequestSignIn("loading")).toBe(false);
+  });
+
   it("normalizes selected document ids against the current document list", () => {
     expect(
-      normalizeSelectedDocumentIds([" document-1 ", "missing", "document-1"], documents),
+      normalizeSelectedDocumentIds(
+        [" document-1 ", "missing", "document-1"],
+        documents,
+      ),
     ).toEqual(["document-1"]);
   });
 
   it("toggles individual and all document selections without retaining stale ids", () => {
     expect(toggleDocumentSelection(["document-1"], "document-1")).toEqual([]);
     expect(toggleDocumentSelection([], "document-2")).toEqual(["document-2"]);
-    expect(toggleEveryDocumentSelection(["stale-document"], documents)).toEqual([
-      "document-1",
-      "document-2",
-    ]);
-    expect(toggleEveryDocumentSelection(["document-1", "document-2"], documents)).toEqual([]);
+    expect(toggleEveryDocumentSelection(["stale-document"], documents)).toEqual(
+      ["document-1", "document-2"],
+    );
+    expect(
+      toggleEveryDocumentSelection(["document-1", "document-2"], documents),
+    ).toEqual([]);
   });
 
   it("adds uploaded documents to the current selection once", () => {
-    expect(addSelectedDocumentId(["document-1"], "document-1")).toEqual(["document-1"]);
+    expect(addSelectedDocumentId(["document-1"], "document-1")).toEqual([
+      "document-1",
+    ]);
     expect(addSelectedDocumentId(["document-1"], "document-2")).toEqual([
       "document-1",
       "document-2",
@@ -137,7 +154,9 @@ describe("notebook workspace view model", () => {
 
   it("filters and orders notebooks for the gallery", () => {
     expect(filterNotebooks(notebooks, "care")).toEqual([notebooks[1]]);
-    expect(orderNotebooksByMostRecent(notebooks).map((notebook) => notebook.id)).toEqual([
+    expect(
+      orderNotebooksByMostRecent(notebooks).map((notebook) => notebook.id),
+    ).toEqual([
       "healthspan-diagnostics",
       "care-plan-builder",
       "physician-briefing",
@@ -161,24 +180,25 @@ describe("notebook workspace view model", () => {
   it("auto-names untitled notebooks from the first topic prompt", () => {
     expect(
       shouldAutoNameNotebook(
-        decorateNotebookSummary(
-          {
-            category: "Member notebook",
-            createdDateUtc: "2026-06-06T12:00:00.000Z",
-            description: "",
-            id: "notebook-4",
-            lastUpdatedDateUtc: "2026-06-06T12:00:00.000Z",
-            members: [notebookMember],
-            role: "owner",
-            sourceCount: 0,
-            title: "Untitled notebook",
-          },
-        ),
+        decorateNotebookSummary({
+          category: "Member notebook",
+          createdDateUtc: "2026-06-06T12:00:00.000Z",
+          description: "",
+          id: "notebook-4",
+          lastUpdatedDateUtc: "2026-06-06T12:00:00.000Z",
+          members: [notebookMember],
+          role: "owner",
+          sourceCount: 0,
+          title: "Untitled notebook",
+          workspaceId: "workspace-1",
+        }),
       ),
     ).toBe(true);
-    expect(inferNotebookTitleFromPrompt("Summarize cardiovascular risk from the latest labs")).toBe(
-      "Cardiovascular Risk Latest Labs",
-    );
+    expect(
+      inferNotebookTitleFromPrompt(
+        "Summarize cardiovascular risk from the latest labs",
+      ),
+    ).toBe("Cardiovascular Risk Latest Labs");
   });
 });
 
@@ -200,6 +220,7 @@ const persistedNotebooks = [
     role: "owner" as const,
     sourceCount: 2,
     title: "Healthspan Diagnostics",
+    workspaceId: "workspace-1",
   },
   {
     category: "Care Planning",
@@ -211,6 +232,7 @@ const persistedNotebooks = [
     role: "owner" as const,
     sourceCount: 1,
     title: "Care Plan Builder",
+    workspaceId: "workspace-1",
   },
   {
     category: "Briefing",
@@ -222,10 +244,13 @@ const persistedNotebooks = [
     role: "owner" as const,
     sourceCount: 3,
     title: "Physician Briefing",
+    workspaceId: "workspace-1",
   },
 ];
 
-const notebooks = persistedNotebooks.map((notebook) => decorateNotebookSummary(notebook));
+const notebooks = persistedNotebooks.map((notebook) =>
+  decorateNotebookSummary(notebook),
+);
 
 const documents: DocumentSummary[] = [
   {

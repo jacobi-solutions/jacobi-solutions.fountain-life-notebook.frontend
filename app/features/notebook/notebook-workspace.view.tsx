@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import type {
   NotebookInviteDraft,
   NotebookSummary,
@@ -7,8 +7,10 @@ import type {
 } from "./notebook-workspace.model";
 import {
   filterNotebooks,
+  formatAuthStatus,
   formatNotebookDate,
   orderNotebooksByMostRecent,
+  shouldRequestSignIn,
 } from "./notebook-workspace.vm";
 import { StepAwayFlow } from "./step-away-flow";
 
@@ -36,11 +38,72 @@ const INVITE_ROLES: NotebookInviteDraft["role"][] = [
   "clinician",
   "viewer",
 ];
+const INTERACTIVE_SELECTOR =
+  "button, a, input, textarea, select, summary, label, [role='button'], [role='link'], [tabindex]";
+const AUTH_BYPASS_SELECTOR = "[data-auth-bypass='true']";
 
 export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
+  const authStatusLabel = formatAuthStatus(model.authState.status);
+  const requiresSignIn = shouldRequestSignIn(model.authState.status);
+
+  function requestSignInForSignedOutAction(event: MouseEvent<HTMLElement>) {
+    if (!requiresSignIn || !(event.target instanceof Element)) {
+      return;
+    }
+
+    const interactiveElement = event.target.closest(INTERACTIVE_SELECTOR);
+    if (
+      !interactiveElement ||
+      !event.currentTarget.contains(interactiveElement) ||
+      interactiveElement.closest(AUTH_BYPASS_SELECTOR)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    model.onSignIn();
+  }
+
+  function requestSignInForSignedOutKey(event: KeyboardEvent<HTMLElement>) {
+    if (
+      !requiresSignIn ||
+      !(event.target instanceof Element) ||
+      (event.key !== "Enter" && event.key !== " ")
+    ) {
+      return;
+    }
+
+    const interactiveElement = event.target.closest(INTERACTIVE_SELECTOR);
+    if (
+      !interactiveElement ||
+      !event.currentTarget.contains(interactiveElement) ||
+      interactiveElement.closest(AUTH_BYPASS_SELECTOR)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    model.onSignIn();
+  }
+
+  function requestSignInForSignedOutSubmit(event: FormEvent<HTMLElement>) {
+    if (!requiresSignIn) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    model.onSignIn();
+  }
+
   return (
     <main
       className={`notebook-shell ${model.isNotebookListVisible ? "notebook-shell-gallery" : "notebook-shell-detail"}`}
+      onClickCapture={requestSignInForSignedOutAction}
+      onKeyDownCapture={requestSignInForSignedOutKey}
+      onSubmitCapture={requestSignInForSignedOutSubmit}
     >
       <div className="notebook-ribbon">
         AI-Guided Diagnostics / Restorative Therapeutics / Always-on Care
@@ -71,9 +134,9 @@ export function NotebookWorkspaceView(model: NotebookWorkspaceModel) {
             )}
           </div>
         </div>
-        <div className="notebook-session">
+        <div className="notebook-session" data-auth-bypass="true">
           <span className={`auth-pill auth-pill-${model.authState.status}`}>
-            {model.authState.status}
+            {authStatusLabel}
           </span>
           {model.authState.status === "authenticated" ? (
             <button
@@ -112,9 +175,26 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
     model.notebookSearch,
   );
   const recentNotebooks = orderNotebooksByMostRecent(visibleNotebooks);
+  const requiresSignIn = shouldRequestSignIn(model.authState.status);
+  const isAuthLoading = model.authState.status === "loading";
+  const createNotebookLabel = requiresSignIn
+    ? "Sign in to create notebook"
+    : "Create notebook";
 
   return (
     <>
+      {requiresSignIn ? (
+        <section className="sign-in-callout" aria-live="polite">
+          <div>
+            <strong>You are signed out</strong>
+            <span>Sign in to view notebooks or create a new one.</span>
+          </div>
+          <button type="button" onClick={model.onSignIn}>
+            Sign in
+          </button>
+        </section>
+      ) : null}
+
       <section
         className="notebook-gallery-toolbar"
         aria-label="Notebook controls"
@@ -122,21 +202,31 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
         <label className="notebook-search">
           <span>Search notebooks</span>
           <input
+            readOnly={requiresSignIn}
             type="search"
             value={model.notebookSearch}
-            placeholder="Search notebooks"
+            placeholder={
+              requiresSignIn ? "Sign in to search notebooks" : "Search notebooks"
+            }
             onChange={(event) =>
               model.onNotebookSearchChange(event.currentTarget.value)
             }
           />
         </label>
-        <button type="button" onClick={model.onCreateNotebook}>
-          + Create notebook
+        <button
+          type="button"
+          disabled={isAuthLoading}
+          onClick={model.onCreateNotebook}
+        >
+          {requiresSignIn ? createNotebookLabel : `+ ${createNotebookLabel}`}
         </button>
       </section>
 
       {model.notebooksError ? (
         <p className="inline-error">{model.notebooksError}</p>
+      ) : null}
+      {model.operationError ? (
+        <p className="inline-error">{model.operationError}</p>
       ) : null}
 
       <section
@@ -149,11 +239,18 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
         <div className="notebook-card-grid">
           <button
             type="button"
-            className="create-notebook-card"
+            className={`create-notebook-card ${
+              requiresSignIn ? "create-notebook-card-auth" : ""
+            }`}
+            disabled={isAuthLoading}
             onClick={model.onCreateNotebook}
           >
             <span aria-hidden="true">+</span>
-            <strong>Create new notebook</strong>
+            <strong>
+              {requiresSignIn
+                ? "Sign in to create notebook"
+                : "Create new notebook"}
+            </strong>
           </button>
           {recentNotebooks.map((notebook) => (
             <NotebookCard key={notebook.id} model={model} notebook={notebook} />
@@ -167,7 +264,9 @@ function NotebookGallery({ model }: { model: NotebookWorkspaceModel }) {
           ) : null}
         </div>
       </section>
-      <StepAwayFlow className="gallery-step-away" />
+      <div data-auth-bypass="true">
+        <StepAwayFlow className="gallery-step-away" />
+      </div>
     </>
   );
 }
@@ -239,6 +338,8 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
     model.documents.length > 0 && selectedCount === model.documents.length;
   const isViewingDocument = Boolean(model.activeDocumentId);
   const canInviteMembers = model.activeNotebook?.role === "owner";
+  const requiresSignIn = shouldRequestSignIn(model.authState.status);
+  const isAuthLoading = model.authState.status === "loading";
   const canAsk =
     model.authState.status === "authenticated" &&
     model.question.trim().length > 0 &&
@@ -246,6 +347,11 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
 
   function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (requiresSignIn) {
+      model.onSignIn();
+      return;
+    }
+
     model.onAskQuestion();
   }
 
@@ -364,8 +470,15 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
             <button
               type="button"
               className="ghost-button compact-button"
-              disabled={model.documents.length === 0}
-              onClick={model.onToggleEveryDocument}
+              disabled={isAuthLoading || model.documents.length === 0}
+              onClick={() => {
+                if (requiresSignIn) {
+                  model.onSignIn();
+                  return;
+                }
+
+                model.onToggleEveryDocument();
+              }}
             >
               {allDocumentsSelected ? "Clear" : "Select all"}
             </button>
@@ -374,6 +487,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
           <label className="upload-target">
             <input
               accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+              disabled={requiresSignIn || isAuthLoading}
               multiple
               type="file"
               onChange={(event) => {
@@ -462,8 +576,15 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                       <button
                         type="button"
                         className="ghost-button danger-button compact-button"
-                        disabled={isDeletingThisDocument}
-                        onClick={() => model.onDeleteDocument(document.id)}
+                        disabled={isAuthLoading || isDeletingThisDocument}
+                        onClick={() => {
+                          if (requiresSignIn) {
+                            model.onSignIn();
+                            return;
+                          }
+
+                          model.onDeleteDocument(document.id);
+                        }}
                       >
                         {isDeletingThisDocument ? "Deleting" : "Delete"}
                       </button>
@@ -473,7 +594,9 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
               })
             )}
           </div>
-          <StepAwayFlow className="document-step-away" />
+          <div data-auth-bypass="true">
+            <StepAwayFlow className="document-step-away" />
+          </div>
         </aside>
 
         <section
@@ -529,6 +652,7 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                     <label>
                       <input
                         accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+                        disabled={requiresSignIn || isAuthLoading}
                         multiple
                         type="file"
                         onChange={(event) => {
@@ -596,8 +720,15 @@ function NotebookDetail({ model }: { model: NotebookWorkspaceModel }) {
                   model.onQuestionChange(event.currentTarget.value)
                 }
               />
-              <button type="submit" disabled={!canAsk}>
-                {model.isAsking ? "Answering" : "Ask"}
+              <button
+                type="submit"
+                disabled={isAuthLoading || (!requiresSignIn && !canAsk)}
+              >
+                {requiresSignIn
+                  ? "Sign in to ask"
+                  : model.isAsking
+                    ? "Answering"
+                    : "Ask"}
               </button>
             </form>
           )}
@@ -815,8 +946,16 @@ function NotebookEditor({ model }: { model: NotebookWorkspaceModel }) {
 }
 
 function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
+  const requiresSignIn = shouldRequestSignIn(model.authState.status);
+  const isAuthLoading = model.authState.status === "loading";
+
   function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (requiresSignIn) {
+      model.onSignIn();
+      return;
+    }
+
     model.onSendInvite();
   }
 
@@ -898,11 +1037,17 @@ function NotebookInviteDialog({ model }: { model: NotebookWorkspaceModel }) {
           <button
             type="submit"
             disabled={
-              model.isInvitingMember ||
-              model.notebookInviteDraft.email.trim().length === 0
+              isAuthLoading ||
+              (!requiresSignIn &&
+              (model.isInvitingMember ||
+                model.notebookInviteDraft.email.trim().length === 0))
             }
           >
-            {model.isInvitingMember ? "Inviting" : "Send invite"}
+            {requiresSignIn
+              ? "Sign in to invite"
+              : model.isInvitingMember
+                ? "Inviting"
+                : "Send invite"}
           </button>
         </div>
       </form>
